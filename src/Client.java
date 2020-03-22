@@ -35,6 +35,30 @@ public class Client {
         responsiveServer = 0;
     }
 
+    private void startConnection() {
+        try {
+            // connection to responsive server
+            connection = new Socket("localhost", responsiveServer);
+            OutputStream outputStream = connection.getOutputStream();
+            serverOut = new ObjectOutputStream(outputStream);
+            InputStream inputStream = connection.getInputStream();
+            serverIn = new ObjectInputStream(inputStream);
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+
+    private String usernameInput() {
+        String username = "";
+        System.out.println("> enter your username");
+        try {
+            username = userInput.readLine();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+        return username;
+    }
+
     private boolean userCommandIsValid(String userCommand) {
         userCommand = userCommand.toLowerCase();
         return userCommand.equals("exit") || userCommand.equals("login") || userCommand.equals("register");
@@ -73,10 +97,7 @@ public class Client {
                 System.out.println("** login successful");
                 break;
             case "register":
-                boolean registerSuccessful = register();
-                while (!registerSuccessful) {
-                    registerSuccessful = register();
-                }
+                register();
                 System.out.println("** register successful");
                 break;
             case "exit":
@@ -90,16 +111,8 @@ public class Client {
         String password = "";
         Login myLogin = new Login(username, password);
         try {
-            // connection to responsive server
-            connection = new Socket("localhost", responsiveServer);
-
-            OutputStream outputStream = connection.getOutputStream();
-            serverOut = new ObjectOutputStream(outputStream);
-            InputStream inputStream = connection.getInputStream();
-            serverIn = new ObjectInputStream(inputStream);
-
-            System.out.println("> enter your username");
-            username = userInput.readLine();
+            startConnection();
+            username = usernameInput();
             myLogin.setUsername(username);
 
             System.out.println("> enter your password");
@@ -113,10 +126,9 @@ public class Client {
             if (myLogin.isSuccessful()) {
                 this.username = username;
                 this.password = password;
-                System.out.println("success");
                 return;
             } else {
-                System.out.println(myLogin.getErrorMessage());
+                System.err.println(myLogin.getErrorMessage());
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
@@ -132,53 +144,95 @@ public class Client {
         login();
     }
 
-    private boolean register() {
-        String username = "";
-        String password;
-        String passwordRepeat;
-        Register myRegister = new Register(username);
-        try {
-            System.out.println("> enter your username");
-            username = userInput.readLine();
-            myRegister.setUsername(username);
 
-            // send register request to server and see if username is available
+    private Register createNewUsername() {
+        String username = "";
+        Register myRegister = new Register(username);
+
+        startConnection();
+        username = usernameInput();
+        myRegister.setUsername(username);
+
+        // send register request to server and see if username is available
+        try {
             serverOut.writeObject(myRegister);
             serverOut.flush();
-
-            // receive register object back from server
             myRegister = (Register) serverIn.readObject();
-
             if (myRegister.isUsernameAvailable()) {
-                System.out.println("> enter your password");
-                password = userInput.readLine();
-                System.out.println("> repeat your password");
-                passwordRepeat = userInput.readLine();
-                if (!password.equals(passwordRepeat)) {
-                    System.out.println("password do not match");
-                    return false;
-                }
-                myRegister.setPassword(password);
-                serverOut.writeObject(myRegister);
-                serverOut.flush();
-
-                myRegister = (Register) serverIn.readObject();
-
-                if (myRegister.isSuccessful()) {
-                    this.username = username;
-                    this.password = password;
-                    return true;
-                } else {
-                    System.err.println(myRegister.getErrorMessage());
-                }
+                return myRegister;
             } else {
                 System.err.println(myRegister.getErrorMessage());
-                return false;
+                register();
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
+        } finally {
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (IOException e) {
+                System.err.println(e);
+            }
         }
-        return false;
+        return myRegister;
+    }
+
+    private void register() {
+        String password = "";
+        Register myRegister = createNewUsername();
+        try {
+            startConnection();
+            password = passwordInput();
+            myRegister.setPassword(password);
+            serverOut.writeObject(myRegister);
+            serverOut.flush();
+
+            myRegister = (Register) serverIn.readObject();
+
+            if (myRegister.isSuccessful()) {
+                this.username = username;
+                this.password = password;
+            } else {
+                System.err.println(myRegister.getErrorMessage());
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println(e);
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (IOException e) {
+                    System.err.println(e);
+                }
+            }
+        }
+    }
+
+    private String passwordInput() {
+        String password = "";
+        String passwordRepeat = "";
+        boolean passwordMatch = false;
+        while (!passwordMatch) {
+            System.out.println("> enter your password");
+            try {
+                password = userInput.readLine();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
+            System.out.println("> repeat your password");
+            try {
+                passwordRepeat = userInput.readLine();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
+            if (password.equals(passwordRepeat)) {
+                passwordMatch = true;
+            } else {
+                System.err.println("** passwords do not match");
+            }
+        }
+        return password;
     }
 
 
@@ -187,7 +241,7 @@ public class Client {
             Socket connection = new Socket("localhost", MAIN_SERVER_PORT);
             BufferedReader networkIn = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             PrintWriter networkOut = new PrintWriter(connection.getOutputStream());
-            networkOut.println("SERVER REQUEST");
+            networkOut.println("SERVERREQUEST");
             networkOut.flush();
             String serverAnswer = networkIn.readLine();
             return Integer.parseInt(serverAnswer);

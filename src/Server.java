@@ -8,9 +8,6 @@ public class Server {
 
     private DataManager dataManager;
 
-    // just for testing
-    private int port;
-
     private ServerSocket server;
 
     // connection to client
@@ -19,7 +16,6 @@ public class Server {
     private ObjectOutputStream clientOut;
 
     public Server(int port) {
-        this.port = port;
         dataManager = new DataManager("user.txt", "chatList.txt", "chat.txt");
         try {
             server = new ServerSocket(port);
@@ -46,11 +42,12 @@ public class Server {
                     loginWorker.start();
                 } else if (nextElement instanceof Register) {
                     Register myRegister = (Register) nextElement;
+                    RegisterWorker registerWorker = new RegisterWorker(dataManager, clientOut, myRegister);
+                    registerWorker.start();
                 }
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println(e);
             }
         }
     }
-
 }

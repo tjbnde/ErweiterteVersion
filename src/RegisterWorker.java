@@ -2,41 +2,38 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 
 public class RegisterWorker extends Worker {
-    private ObjectOutputStream networkOut;
+    private ObjectOutputStream clientOut;
     private Register newRegister;
 
-    public RegisterWorker(DataManager dataManager, ObjectOutputStream networkOut) {
+    public RegisterWorker(DataManager dataManager, ObjectOutputStream networkOut, Register newRegister) {
         super(dataManager);
-        this.networkOut = networkOut;
+        this.clientOut = networkOut;
+        this.newRegister = newRegister;
     }
 
     public void run() {
-        while (true) {
-            if(newRegister.getPassword().equals("")) {
-                if (dataManager.checkUsername(newRegister.getUsername())) {
-                    newRegister.setErrorMessage("** ERROR: username is already taken");
-                    try {
-                        networkOut.writeObject(newRegister);
-                        networkOut.flush();
-                    } catch (IOException e) {
-                        System.err.println(e);
-                    }
-                } else {
-                    newRegister.setErrorMessage("");
-                    newRegister.setSuccessful(true);
-                    try {
-                        networkOut.writeObject(newRegister);
-                        networkOut.flush();
-                    } catch (IOException e) {
-                        System.err.println(e);
-                    }
-                }
+        if(!newRegister.isUsernameAvailable()) {
+            if (dataManager.userNameAvailable(newRegister.getUsername())) {
+                newRegister.setUsernameAvailable(true);
+            } else {
+                newRegister.setErrorMessage("** username is already taken");
             }
-
-
-
-
-
+            try {
+                clientOut.writeObject(newRegister);
+                clientOut.flush();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
+        } else {
+            dataManager.addUser(newRegister);
+            newRegister.setSuccessful(true);
+            newRegister.setErrorMessage("");
+            try {
+                clientOut.writeObject(newRegister);
+                clientOut.flush();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
         }
     }
 }

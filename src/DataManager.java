@@ -53,6 +53,7 @@ public class DataManager {
     }
 
     public boolean checkUser(String username, String password) {
+        readRegisteredUsers();
         if(registeredUsers.containsKey(username)) {
             Client user = registeredUsers.get(username);
             return user.getPassword().equals(password);
@@ -60,7 +61,7 @@ public class DataManager {
         return false;
     }
 
-    public boolean checkUsername(String username) {
-        return registeredUsers.containsKey(username);
+    public boolean userNameAvailable(String username) {
+        return !registeredUsers.containsKey(username);
     }
 }

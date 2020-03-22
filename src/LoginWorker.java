@@ -18,7 +18,7 @@ public class LoginWorker extends Worker {
             newLogin.setSuccessful(true);
         } else {
             newLogin.setSuccessful(false);
-            newLogin.setErrorMessage("** ERROR: wrong username or password");
+            newLogin.setErrorMessage("** wrong username or password");
         }
         try {
             networkOut.writeObject(newLogin);
