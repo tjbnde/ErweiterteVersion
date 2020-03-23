@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -20,7 +21,7 @@ public class DataManager {
 
     private HashMap<String, Client> registeredUsers;
     private HashMap<String, Chat> existingChatList;
-    private HashMap<String, Client> loggedUsers;
+    private HashMap<String, Socket> loggedUsers;
 
 
 
@@ -44,7 +45,8 @@ public class DataManager {
         try {
             FileWriter writer = new FileWriter(userFile, true);
             writer.write(newRegister.getUsername() + ";" + newRegister.getPassword() + "\n");
-            registeredUsers.put(newRegister.getUsername(), new Client(newRegister.getUsername(), newRegister.getPassword()));
+            Client newClient = new Client(newRegister.getUsername(), newRegister.getPassword()))
+            registeredUsers.put(newClient.getUsername(), newClient);
             writer.close();
         } catch (IOException e) {
             System.err.println(e);
@@ -125,7 +127,9 @@ public class DataManager {
     public boolean validateUser(String username, String password) {
         if(registeredUsers.containsKey(username)) {
             Client user = registeredUsers.get(username);
-            return user.getPassword().equals(password);
+            if(user.getPassword().equals(password)) {
+                return true;
+            }
         }
         return false;
     }

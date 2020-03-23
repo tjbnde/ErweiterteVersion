@@ -3,9 +3,7 @@ package Server;
 import Model.Chat;
 import Model.Login;
 import Model.Register;
-import Server.Worker.ChatWorker;
-import Server.Worker.LoginWorker;
-import Server.Worker.RegisterWorker;
+import Server.Worker.*;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -32,7 +30,6 @@ public class Server {
         } catch (IOException e) {
             System.err.println(e);
         }
-        start();
     }
 
     public void start() {
