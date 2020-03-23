@@ -42,4 +42,3 @@ public class LoginWorker extends Worker {
         }
     }
 }
-

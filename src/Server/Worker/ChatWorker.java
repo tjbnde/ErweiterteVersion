@@ -25,27 +25,27 @@ public class ChatWorker extends Worker {
             try {
                 clientOut.writeObject(myChat);
                 clientOut.flush();
-            } catch(IOException e) {
+            } catch (IOException e) {
                 System.err.println(e);
             }
             return;
         }
-        if(!dataManager.userIsRegistered(myChat.getUserB())) {
-            myChat.setErrorMessage("** user \"" + myChat.getUserB() + "\" is not registered" );
+        if (!dataManager.userIsRegistered(myChat.getUserB())) {
+            myChat.setErrorMessage("** user \"" + myChat.getUserB() + "\" is not registered");
             try {
                 clientOut.writeObject(myChat);
                 clientOut.flush();
-            } catch(IOException e) {
+            } catch (IOException e) {
                 System.err.println(e);
             }
         } else {
-            if(dataManager.chatExists(myChat)) {
+            if (dataManager.chatExists(myChat)) {
                 ArrayList<Message> messages = dataManager.returnChatMessages(myChat);
                 myChat.setMessages(messages);
                 try {
                     clientOut.writeObject(myChat);
                     clientOut.flush();
-                } catch(IOException e) {
+                } catch (IOException e) {
                     System.err.println(e);
                 }
             } else {

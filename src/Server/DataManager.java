@@ -45,7 +45,7 @@ public class DataManager {
         try {
             FileWriter writer = new FileWriter(userFile, true);
             writer.write(newRegister.getUsername() + ";" + newRegister.getPassword() + "\n");
-            Client newClient = new Client(newRegister.getUsername(), newRegister.getPassword()))
+            Client newClient = new Client(newRegister.getUsername(), newRegister.getPassword());
             registeredUsers.put(newClient.getUsername(), newClient);
             writer.close();
         } catch (IOException e) {
@@ -158,7 +158,4 @@ public class DataManager {
             System.err.println(e);
         }
     }
-
-
-
 }

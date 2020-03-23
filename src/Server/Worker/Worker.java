@@ -1,7 +1,6 @@
 package Server.Worker;
 
 import Server.DataManager;
-
 import java.net.Socket;
 
 public class Worker extends Thread{
