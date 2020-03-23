@@ -1,2 +1,2 @@
-# Chat-System
-Java TCP distributed Chat Sytem
+# Model.Chat-System
+Java TCP distributed Model.Chat Sytem

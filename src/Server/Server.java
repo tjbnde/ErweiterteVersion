@@ -1,3 +1,12 @@
+package Server;
+
+import Model.Chat;
+import Model.Login;
+import Model.Register;
+import Server.Worker.ChatWorker;
+import Server.Worker.LoginWorker;
+import Server.Worker.RegisterWorker;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -19,7 +28,7 @@ public class Server {
         dataManager = new DataManager("user.txt", "chatList.txt", "chat.txt");
         try {
             server = new ServerSocket(port);
-            System.out.println("Server successfully started on port " + port);
+            System.out.println("Server.Server successfully started on port " + port);
         } catch (IOException e) {
             System.err.println(e);
         }

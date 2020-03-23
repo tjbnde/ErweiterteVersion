@@ -1,8 +1,14 @@
+package Server.Worker;
+
+import Model.Chat;
+import Model.Message;
+import Server.DataManager;
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
-public class ChatWorker extends Worker{
+public class ChatWorker extends Worker {
     ObjectOutputStream clientOut;
     Chat myChat;
 

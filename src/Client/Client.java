@@ -1,3 +1,10 @@
+package Client;
+
+import Model.Chat;
+import Model.Login;
+import Model.Message;
+import Model.Register;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.Iterator;

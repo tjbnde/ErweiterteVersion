@@ -1,3 +1,10 @@
+package Server;
+
+import Client.Client;
+import Model.Chat;
+import Model.Message;
+import Model.Register;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -33,7 +40,7 @@ public class DataManager {
 
 
     public void addUser(Register newRegister) {
-        newRegister.setPassword(Helper.hashPassword(newRegister.getPassword()));
+        newRegister.setPassword(newRegister.getPassword());
         try {
             FileWriter writer = new FileWriter(userFile, true);
             writer.write(newRegister.getUsername() + ";" + newRegister.getPassword() + "\n");

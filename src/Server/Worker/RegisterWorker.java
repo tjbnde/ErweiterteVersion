@@ -1,3 +1,8 @@
+package Server.Worker;
+
+import Model.Register;
+import Server.DataManager;
+
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
