@@ -1,30 +1,45 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.Iterator;
 
 public class Client {
-    public static final int MAIN_SERVER_PORT = 5555;
+    // adresses of server
+    private String[] serverHostname;
+    private int[] serverPort;
 
-    private String hostname = "localhost";
-
+    // connection to server and streams
     private Socket connection;
-
     private ObjectInputStream serverIn;
     private ObjectOutputStream serverOut;
 
+    // stream for user input
     private BufferedReader userInput;
 
+    // unique username
     private String username;
     private String password;
+
+    // chat object to get chat partner
     private Chat chat;
 
-    private int responsiveServer;
+    // server port and hostname which processes request
+    private int responsiveServerPort;
+    private String responsiveServerHostname;
+
+    // counter for lamport
+    private int globalLamportCounter;
+
 
     public Client() {
         username = "";
         password = "";
         chat = null;
         userInput = new BufferedReader(new InputStreamReader(System.in));
-        responsiveServer = 0;
+        responsiveServerPort = 0;
+        responsiveServerHostname = "";
+        serverPort = new int[]{6666, 8888};
+        serverHostname = new String[]{"localhost", "localhost"};
+        globalLamportCounter = 0;
     }
 
     public Client(String username, String password) {
@@ -32,13 +47,99 @@ public class Client {
         this.password = password;
         chat = null;
         userInput = new BufferedReader(new InputStreamReader(System.in));
-        responsiveServer = 0;
+        responsiveServerPort = 0;
+        responsiveServerHostname = "";
+        serverPort = new int[]{6666, 8888};
+        serverHostname = new String[]{"localhost", "localhost"};
+        globalLamportCounter = 0;
+    }
+
+    private void enterSystem() {
+        String userCommand = getUserCommand();
+        switch (userCommand) {
+            case "login":
+                login();
+                System.out.println("** login successful");
+                break;
+            case "register":
+                register();
+                System.out.println("** register successful");
+                break;
+            case "exit":
+                System.out.println("** exit successful");
+                System.exit(0);
+        }
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+
+    public void start() {
+        enterSystem();
+        joinChat();
+        chatLoop();
+    }
+
+
+    private void chatLoop() {
+        startConnection();
+        while (isLoggedIn()) {
+            try {
+                String messageText = userInput.readLine();
+                if (messageText.equals("logout")) {
+                    logoutDialog();
+                }
+                Message myMessage = new Message(username, chat.getUserB(), globalLamportCounter, messageText);
+                serverOut.writeObject(myMessage);
+                serverOut.flush();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
+
+        }
+    }
+
+    private void logoutDialog() {
+        System.out.println("** going to logout - proceed? (y/n)");
+        try {
+            String userAnswer = userInput.readLine();
+            if (userAnswer.equals("y")) {
+                logout();
+            } else if (!userAnswer.equals("n")) {
+                logoutDialog();
+            }
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+
+    private void logout() {
+        username = "";
+        password = "";
+        chat = null;
+        globalLamportCounter = 0;
+        responsiveServerHostname = "";
+        responsiveServerPort = 0;
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (IOException e) {
+            System.err.println(e);
+        }
     }
 
     private void startConnection() {
+        int random = returnRandom();
+        responsiveServerPort = serverPort[random];
+        responsiveServerHostname = serverHostname[random];
         try {
             // connection to responsive server
-            connection = new Socket("localhost", responsiveServer);
+            connection = new Socket(responsiveServerHostname, responsiveServerPort);
             OutputStream outputStream = connection.getOutputStream();
             serverOut = new ObjectOutputStream(outputStream);
             InputStream inputStream = connection.getInputStream();
@@ -83,38 +184,52 @@ public class Client {
         return "";
     }
 
-    public void start() {
-        // send request to main server for responsive server (LOADBALANCING)
-        responsiveServer = getResponsiveServer();
-        if (responsiveServer == 0) {
-            return; // FAILURE -- MAIN SERVER DID NOT RESPOND PROPERLY
-        }
-        String userCommand = getUserCommand();
+    private void joinChat() {
+        startConnection();
+        System.out.println("** enter username of chat partner");
+        try {
+            String chatPartner = userInput.readLine();
+            chat = new Chat(username, chatPartner);
+            serverOut.writeObject(chat);
+            chat = (Chat) serverIn.readObject();
+            if (!chat.getErrorMessage().isEmpty()) {
+                System.err.println(chat.getErrorMessage());
+                joinChat();
+            } else {
+                System.out.println("** chat successfully joined");
+                Iterator<Message> i = chat.getMessages().iterator();
+                while (i.hasNext()) {
+                    Message myMessage = i.next();
+                    System.out.println(myMessage.getHeader().getSendFrom() + ": " + myMessage.getText());
 
-        switch (userCommand) {
-            case "login":
-                login();
-                System.out.println("** login successful");
-                break;
-            case "register":
-                register();
-                System.out.println("** register successful");
-                break;
-            case "exit":
-                System.out.println("** exit successful");
-                System.exit(0);
+                }
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println(e);
+        } finally {
+            try {
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (IOException e) {
+                System.err.println(e);
+            }
         }
     }
 
+
+    private boolean isLoggedIn() {
+        return !username.isEmpty() && !password.isEmpty();
+    }
+
     private void login() {
+        startConnection();
         String username = "";
         String password = "";
         Login myLogin = new Login(username, password);
+        username = usernameInput();
+        myLogin.setUsername(username);
         try {
-            startConnection();
-            username = usernameInput();
-            myLogin.setUsername(username);
-
             System.out.println("> enter your password");
             password = userInput.readLine();
             myLogin.setPassword(password);
@@ -191,7 +306,7 @@ public class Client {
             myRegister = (Register) serverIn.readObject();
 
             if (myRegister.isSuccessful()) {
-                this.username = username;
+                this.username = myRegister.getUsername();
                 this.password = password;
             } else {
                 System.err.println(myRegister.getErrorMessage());
@@ -235,24 +350,6 @@ public class Client {
         return password;
     }
 
-
-    private int getResponsiveServer() {
-        try {
-            Socket connection = new Socket("localhost", MAIN_SERVER_PORT);
-            BufferedReader networkIn = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            PrintWriter networkOut = new PrintWriter(connection.getOutputStream());
-            networkOut.println("SERVERREQUEST");
-            networkOut.flush();
-            String serverAnswer = networkIn.readLine();
-            return Integer.parseInt(serverAnswer);
-        } catch (IOException e) {
-            System.err.println(e);
-        }
-
-        return 0;
-    }
-
-
     public String getUsername() {
         return username;
     }
@@ -267,5 +364,22 @@ public class Client {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Chat getChat() {
+        return chat;
+    }
+
+    public void setChat(Chat chat) {
+        this.chat = chat;
+    }
+
+    private int returnRandom() {
+        double random =  Math.random();
+        if (random < 0.5) {
+            return 0;
+        } else {
+            return 1;
+        }
     }
 }

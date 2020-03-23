@@ -1,15 +1,58 @@
-public class Chat{
-    private String chatId;
-    private Client particapteA;
-    private Client particapteB;
+import java.io.Serializable;
+import java.util.ArrayList;
 
-    public Chat(Client particapteA, Client particapteB) {
+public class Chat implements Serializable {
+    private String chatId;
+    private String userA;
+    private String userB;
+    private String errorMessage;
+    private ArrayList<Message> messages;
+
+    public Chat(String userA, String userB) {
+        this.userA = userA;
+        this.userB = userB;
         chatId = generateChatId();
-        this.particapteA = particapteA;
-        this.particapteB = particapteB;
+        errorMessage = "";
+        messages = new ArrayList<>();
+    }
+
+    public Chat(String chatId, String userA, String userB) {
+        this.chatId = chatId;
+        this.userA = userA;
+        this.userB = userB;
+        errorMessage = "";
+        messages = new ArrayList<>();
     }
 
     private String generateChatId() {
-        return "";
+        return userA + userB;
+    }
+
+    public String getChatId() {
+        return chatId;
+    }
+
+    public String getUserA() {
+        return userA;
+    }
+
+    public String getUserB() {
+        return userB;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public ArrayList<Message> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(ArrayList<Message> messages) {
+        this.messages = messages;
     }
 }

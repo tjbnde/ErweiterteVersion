@@ -1,29 +1,24 @@
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public class MessageWorker extends Worker {
-    ObjectInputStream networkIn;
-    ObjectOutputStream networkOut;
+    private ObjectOutputStream clientOut;
 
-    Message message;
+    private Message myMessage;
 
-    public MessageWorker( DataManager dataManager) {
+    public MessageWorker(DataManager dataManager, Message myMessage) {
         super(dataManager);
-        message = null;
+        this.clientOut = clientOut;
+        this.myMessage = myMessage;
     }
 
     public void run() {
-        while(true) {
 
-            try {
-                networkOut = new ObjectOutputStream(connection.getOutputStream());
-                networkIn = new ObjectInputStream(connection.getInputStream());
-
-                Message myMessage = (Message) networkIn.readObject();
-            } catch (IOException | ClassNotFoundException e) {
-                System.err.println(e);
-            }
+        try {
+            clientOut.writeObject(myMessage);
+            clientOut.flush();
+        } catch (IOException e) {
+            System.err.println(e);
         }
     }
 }

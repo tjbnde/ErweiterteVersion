@@ -44,6 +44,10 @@ public class Server {
                     Register myRegister = (Register) nextElement;
                     RegisterWorker registerWorker = new RegisterWorker(dataManager, clientOut, myRegister);
                     registerWorker.start();
+                } else if (nextElement instanceof Chat) {
+                    Chat myChat = (Chat) nextElement;
+                    ChatWorker chatWorker = new ChatWorker(dataManager, clientOut, myChat);
+                    chatWorker.start();
                 }
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println(e);

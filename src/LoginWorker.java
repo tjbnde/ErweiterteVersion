@@ -14,7 +14,7 @@ public class LoginWorker extends Worker {
     }
 
     public void run() {
-        if (dataManager.checkUser(newLogin.getUsername(), newLogin.getPassword())) {
+        if (dataManager.validateUser(newLogin.getUsername(), newLogin.getPassword())) {
             newLogin.setSuccessful(true);
         } else {
             newLogin.setSuccessful(false);
