@@ -4,41 +4,32 @@ import Model.Register;
 import Server.DataManager;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public class RegisterWorker extends Worker {
-    private ObjectOutputStream clientOut;
     private Register newRegister;
 
-    public RegisterWorker(DataManager dataManager, ObjectOutputStream networkOut, Register newRegister) {
-        super(dataManager);
-        this.clientOut = networkOut;
+    public RegisterWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Register newRegister) {
+        super(dataManager, clientOut, clientIn);
         this.newRegister = newRegister;
     }
 
     public void run() {
-        if(!newRegister.isUsernameAvailable()) {
-            if (dataManager.userNameAvailable(newRegister.getUsername())) {
-                newRegister.setUsernameAvailable(true);
-            } else {
-                newRegister.setErrorMessage("** username is already taken");
-            }
-            try {
-                clientOut.writeObject(newRegister);
-                clientOut.flush();
-            } catch (IOException e) {
-                System.err.println(e);
-            }
-        } else {
+        if(dataManager.usernameIsAvailable(newRegister.getUsername())) {
             dataManager.addUser(newRegister);
             newRegister.setSuccessful(true);
             newRegister.setErrorMessage("");
-            try {
-                clientOut.writeObject(newRegister);
-                clientOut.flush();
-            } catch (IOException e) {
-                System.err.println(e);
-            }
+        } else {
+            newRegister.setErrorMessage("** username is already taken");
+
         }
+        try {
+            clientOut.writeObject(newRegister);
+            clientOut.flush();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+
     }
 }

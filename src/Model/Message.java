@@ -3,7 +3,7 @@ package Model;
 import java.io.Serializable;
 import java.util.Date;
 
-public class Message implements Serializable {
+public class Message implements Serializable, Comparable {
     private MessageHeader header;
     private String text;
 
@@ -47,5 +47,10 @@ public class Message implements Serializable {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    @Override
+    public int compareTo(Object vMessage) {
+        return this.getHeader().getLocalLamportCounter() - ((Message) vMessage).getHeader().getLocalLamportCounter();
     }
 }

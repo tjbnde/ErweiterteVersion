@@ -5,13 +5,11 @@ import Model.Chat;
 import Model.Message;
 import Model.Register;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Scanner;
 
 public class DataManager {
@@ -21,9 +19,7 @@ public class DataManager {
 
     private HashMap<String, Client> registeredUsers;
     private HashMap<String, Chat> existingChatList;
-    private HashMap<String, Socket> loggedUsers;
-
-
+    private HashMap<String, ObjectOutputStream> loggedUsers;
 
     public DataManager(String userFileName, String chatListFileName, String chatFileName) {
         userFile = new File(userFileName);
@@ -36,12 +32,10 @@ public class DataManager {
         readRegisteredUsers();
         readExistingChatList();
         readChats();
-
     }
 
 
     public void addUser(Register newRegister) {
-        newRegister.setPassword(newRegister.getPassword());
         try {
             FileWriter writer = new FileWriter(userFile, true);
             writer.write(newRegister.getUsername() + ";" + newRegister.getPassword() + "\n");
@@ -56,7 +50,7 @@ public class DataManager {
     public ArrayList<Message> returnChatMessages(Chat myChat) {
         String userA = myChat.getUserA();
         String userB = myChat.getUserB();
-        if(existingChatList.containsKey(userA + userB)) {
+        if (existingChatList.containsKey(userA + userB)) {
             return existingChatList.get(userA + userB).getMessages();
         } else {
             return existingChatList.get(userB + userA).getMessages();
@@ -67,7 +61,7 @@ public class DataManager {
     private void readRegisteredUsers() {
         try {
             Scanner userFileReader = new Scanner(userFile);
-            while(userFileReader.hasNextLine()) {
+            while (userFileReader.hasNextLine()) {
                 String data = userFileReader.nextLine();
                 String[] userData = data.split(";");
                 String username = userData[0];
@@ -104,8 +98,13 @@ public class DataManager {
                 String data = chatFileReader.nextLine();
                 String[] chatData = data.split(";");
                 String chatID = chatData[0];
-                ArrayList<Message> messages = existingChatList.get(chatID).getMessages();
-                for(int i = 1; i < chatData.length; i++) {
+                ArrayList<Message> messages;
+                if(existingChatList.containsKey(chatID)) {
+                    messages = existingChatList.get(chatID).getMessages();
+                } else {
+                    messages = new ArrayList<>();
+                }
+                for (int i = 1; i < chatData.length; i++) {
                     String[] messageData = chatData[i].split("#%#");
                     String messageID = messageData[0];
                     String sendFrom = messageData[1];
@@ -125,9 +124,9 @@ public class DataManager {
     }
 
     public boolean validateUser(String username, String password) {
-        if(registeredUsers.containsKey(username)) {
+        if (registeredUsers.containsKey(username)) {
             Client user = registeredUsers.get(username);
-            if(user.getPassword().equals(password)) {
+            if (user.getPassword().equals(password)) {
                 return true;
             }
         }
@@ -138,7 +137,7 @@ public class DataManager {
         return registeredUsers.containsKey(username);
     }
 
-    public boolean userNameAvailable(String username) {
+    public boolean usernameIsAvailable(String username) {
         return !registeredUsers.containsKey(username);
     }
 
@@ -148,14 +147,56 @@ public class DataManager {
         return existingChatList.containsKey(userA + userB) || existingChatList.containsKey(userB + userA);
     }
 
+    public void writeMessage(Message myMessage) {
+        try {
+            Scanner chatFileReader = new Scanner(chatFile);
+            ArrayList<String> lines = new ArrayList<>();
+
+            String userA = myMessage.getHeader().getSendFrom();
+            String userB = myMessage.getHeader().getSendTo();
+            while (chatFileReader.hasNextLine()) {
+                String data = chatFileReader.nextLine();
+                String[] chatData = data.split(";");
+                String chatID = chatData[0];
+                if(chatID.equals(userA + userB) || chatID.equals(userB + userA)) {
+                    data += ";" + myMessage.toString();
+                }
+                data += "\n";
+                lines.add(data);
+            }
+            FileWriter writer = new FileWriter(chatFile, false);
+            Iterator<String> i = lines.iterator();
+            while(i.hasNext()) {
+                writer.write(i.next());
+            }
+            writer.close();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+        readChats();
+    }
+
     public void addChat(Chat myChat) {
         try {
             FileWriter writer = new FileWriter(chatListFile, true);
+            FileWriter chatWriter = new FileWriter(chatFile, true);
+            chatWriter.write(myChat.getChatId());
             writer.write(myChat.getChatId() + ";" + myChat.getUserA() + ";" + myChat.getUserB() + "\n");
             existingChatList.put(myChat.getChatId(), new Chat(myChat.getChatId(), myChat.getUserA(), myChat.getUserB()));
             writer.close();
-        } catch(IOException e) {
+            chatWriter.close();
+        } catch (IOException e) {
             System.err.println(e);
+        }
+    }
+
+    public HashMap<String, ObjectOutputStream> getLoggedUsers() {
+        return loggedUsers;
+    }
+
+    public void loginUser(String username, ObjectOutputStream clientOut) {
+        if(!loggedUsers.containsKey(username)) {
+            loggedUsers.put(username, clientOut);
         }
     }
 }

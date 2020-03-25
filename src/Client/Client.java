@@ -1,9 +1,7 @@
 package Client;
 
-import Model.Chat;
-import Model.Login;
-import Model.Message;
-import Model.Register;
+import Client.Worker.MessageReaderWorker;
+import Model.*;
 
 import java.io.*;
 import java.net.Socket;
@@ -35,7 +33,6 @@ public class Client {
 
     // counter for lamport
     private int globalLamportCounter;
-
 
     public Client() {
         username = "";
@@ -72,10 +69,32 @@ public class Client {
                 register();
                 System.out.println("** register successful");
                 break;
+            case "info":
+                printInfo();
+                enterSystem();
+                break;
             case "exit":
                 System.out.println("** exit successful");
                 System.exit(0);
         }
+    }
+
+    private void printInfo() {
+        System.out.println("** printing a list of all commands");
+        System.out.println("** enter [command]-help to get infos for a specific command");
+        System.out.println("/login");
+        System.out.println("/register");
+        System.out.println("/autoregister");
+        System.out.println("/exit");
+    }
+
+    public void start() {
+        enterSystem();
+        joinChat();
+        chatLoop();
+    }
+
+    private void closeConnection() {
         try {
             if (connection != null) {
                 connection.close();
@@ -85,28 +104,27 @@ public class Client {
         }
     }
 
-    public void start() {
-        enterSystem();
-        joinChat();
-        chatLoop();
-    }
-
 
     private void chatLoop() {
         startConnection();
         while (isLoggedIn()) {
+            MessageReaderWorker messageReaderWorker = new MessageReaderWorker(serverIn, username);
+            Thread t = new Thread(messageReaderWorker);
+            t.start();
             try {
+                System.out.println(username + ": ");
                 String messageText = userInput.readLine();
                 if (messageText.equals("logout")) {
                     logoutDialog();
                 }
                 Message myMessage = new Message(username, chat.getUserB(), globalLamportCounter, messageText);
+                globalLamportCounter++;
                 serverOut.writeObject(myMessage);
                 serverOut.flush();
+
             } catch (IOException e) {
                 System.err.println(e);
             }
-
         }
     }
 
@@ -116,7 +134,9 @@ public class Client {
             String userAnswer = userInput.readLine();
             if (userAnswer.equals("y")) {
                 logout();
-            } else if (!userAnswer.equals("n")) {
+            } else if (userAnswer.equals("n")){
+                System.out.println("** logout quited");
+            } else {
                 logoutDialog();
             }
         } catch (IOException e) {
@@ -131,19 +151,15 @@ public class Client {
         globalLamportCounter = 0;
         responsiveServerHostname = "";
         responsiveServerPort = 0;
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (IOException e) {
-            System.err.println(e);
-        }
+        closeConnection();
     }
 
     private void startConnection() {
+        // contact a random sevrer
         int random = returnRandom();
         responsiveServerPort = serverPort[random];
         responsiveServerHostname = serverHostname[random];
+
         try {
             // connection to responsive server
             connection = new Socket(responsiveServerHostname, responsiveServerPort);
@@ -169,26 +185,22 @@ public class Client {
 
     private boolean userCommandIsValid(String userCommand) {
         userCommand = userCommand.toLowerCase();
-        return userCommand.equals("exit") || userCommand.equals("login") || userCommand.equals("register");
+        return userCommand.equals("exit") || userCommand.equals("login") || userCommand.equals("register") || userCommand.equals("info");
     }
 
     private String getUserCommand() {
-        System.out.println("enter command [\"login\"] [\"register\"] [\"exit\"]");
-        String userCommand = "DEFAULT";
-        while (userCommand.equals("DEFAULT")) {
-            try {
+        System.out.println("enter command [”info” for a list of all commands]");
+        String userCommand = "";
+        try {
+            userCommand = userInput.readLine();
+            while (!userCommandIsValid(userCommand)) {
+                System.err.println("enter valid command [”info” for a list of all commands]");
                 userCommand = userInput.readLine();
-                if (userCommandIsValid(userCommand)) {
-                    return userCommand;
-                } else {
-                    userCommand = "DEFAULT";
-                }
-            } catch (IOException e) {
-                System.err.println(e);
             }
-            System.out.println("enter valid command [\"login\"] [\"register\"] [\"exit\"]");
+        } catch (IOException e) {
+            System.err.println(e);
         }
-        return "";
+        return userCommand;
     }
 
     private void joinChat() {
@@ -199,28 +211,22 @@ public class Client {
             chat = new Chat(username, chatPartner);
             serverOut.writeObject(chat);
             chat = (Chat) serverIn.readObject();
-            if (!chat.getErrorMessage().isEmpty()) {
-                System.err.println(chat.getErrorMessage());
-                joinChat();
-            } else {
+            if (chat.isSucessful()) {
                 System.out.println("** chat successfully joined");
                 Iterator<Message> i = chat.getMessages().iterator();
                 while (i.hasNext()) {
                     Message myMessage = i.next();
-                    System.out.println(myMessage.getHeader().getSendFrom() + ": " + myMessage.getText());
-
+                    System.out.println(myMessage.getHeader().getSendFrom() + ": ");
+                    System.out.println(myMessage.getText());
                 }
+            } else {
+                System.err.println(chat.getErrorMessage());
+                joinChat();
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
         } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (IOException e) {
-                System.err.println(e);
-            }
+            closeConnection();
         }
     }
 
@@ -231,15 +237,21 @@ public class Client {
 
     private void login() {
         startConnection();
-        String username = "";
+
+        String username = usernameInput();
         String password = "";
-        Login myLogin = new Login(username, password);
-        username = usernameInput();
-        myLogin.setUsername(username);
+
+        if (username.equals("exit")) {
+            System.out.println("** exit successfully");
+            System.exit(0);
+        }
+
+        System.out.println("> enter your password");
+
         try {
-            System.out.println("> enter your password");
             password = userInput.readLine();
-            myLogin.setPassword(password);
+            Login myLogin = new Login(username, password);
+
             serverOut.writeObject(myLogin);
             serverOut.flush();
 
@@ -248,86 +260,40 @@ public class Client {
             if (myLogin.isSuccessful()) {
                 this.username = username;
                 this.password = password;
-                return;
             } else {
                 System.err.println(myLogin.getErrorMessage());
+                login();
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
         } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (IOException e) {
-                    System.err.println(e);
-                }
-            }
+            closeConnection();
         }
-        login();
+
     }
 
-
-    private Register createNewUsername() {
-        String username = "";
-        Register myRegister = new Register(username);
-
+    private void register() {
         startConnection();
         username = usernameInput();
-        myRegister.setUsername(username);
-
-        // send register request to server and see if username is available
+        password = passwordInput();
+        Register myRegister = new Register(username, password);
         try {
             serverOut.writeObject(myRegister);
             serverOut.flush();
             myRegister = (Register) serverIn.readObject();
-            if (myRegister.isUsernameAvailable()) {
-                return myRegister;
+
+            if (myRegister.isSuccessful()) {
+                this.username = myRegister.getUsername();
+                this.password = myRegister.getPassword();
             } else {
                 System.err.println(myRegister.getErrorMessage());
+                // call function again if it fails
                 register();
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
         } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (IOException e) {
-                System.err.println(e);
-            }
-        }
-        return myRegister;
-    }
-
-    private void register() {
-        String password = "";
-        Register myRegister = createNewUsername();
-        try {
-            startConnection();
-            password = passwordInput();
-            myRegister.setPassword(password);
-            serverOut.writeObject(myRegister);
-            serverOut.flush();
-
-            myRegister = (Register) serverIn.readObject();
-
-            if (myRegister.isSuccessful()) {
-                this.username = myRegister.getUsername();
-                this.password = password;
-            } else {
-                System.err.println(myRegister.getErrorMessage());
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println(e);
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (IOException e) {
-                    System.err.println(e);
-                }
-            }
+            closeConnection();
         }
     }
 
@@ -382,11 +348,12 @@ public class Client {
     }
 
     private int returnRandom() {
-        double random =  Math.random();
+        /*double random = Math.random();
         if (random < 0.5) {
             return 0;
         } else {
             return 1;
-        }
+        }*/
+        return 0;
     }
 }

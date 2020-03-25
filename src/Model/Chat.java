@@ -2,6 +2,7 @@ package Model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class Chat implements Serializable {
     private String chatId;
@@ -9,6 +10,7 @@ public class Chat implements Serializable {
     private String userB;
     private String errorMessage;
     private ArrayList<Message> messages;
+    private boolean sucessful;
 
     public Chat(String userA, String userB) {
         this.userA = userA;
@@ -16,6 +18,7 @@ public class Chat implements Serializable {
         chatId = generateChatId();
         errorMessage = "";
         messages = new ArrayList<>();
+        sucessful = false;
     }
 
     public Chat(String chatId, String userA, String userB) {
@@ -24,6 +27,7 @@ public class Chat implements Serializable {
         this.userB = userB;
         errorMessage = "";
         messages = new ArrayList<>();
+        sucessful = false;
     }
 
     private String generateChatId() {
@@ -31,7 +35,7 @@ public class Chat implements Serializable {
     }
 
     public String getChatId() {
-        return chatId;
+        return chatId.toString();
     }
 
     public String getUserA() {
@@ -56,5 +60,13 @@ public class Chat implements Serializable {
 
     public void setMessages(ArrayList<Message> messages) {
         this.messages = messages;
+    }
+
+    public boolean isSucessful() {
+        return sucessful;
+    }
+
+    public void setSucessful(boolean sucessful) {
+        this.sucessful = sucessful;
     }
 }

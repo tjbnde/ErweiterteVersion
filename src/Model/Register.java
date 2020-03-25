@@ -5,8 +5,15 @@ import java.io.Serializable;
 public class Register implements Serializable {
     private String username;
     private String password;
+    private String errorMessage;
+    private boolean successful;
 
-    private boolean usernameAvailable;
+    public Register(String username, String password) {
+        this.password = password;
+        this.username = username;
+        errorMessage = "";
+        successful = false;
+    }
 
     public boolean isSuccessful() {
         return successful;
@@ -14,25 +21,6 @@ public class Register implements Serializable {
 
     public void setSuccessful(boolean successful) {
         this.successful = successful;
-    }
-
-    private String errorMessage;
-    private boolean successful;
-
-    public Register(String username) {
-        this.password = "";
-        this.username = username;
-        errorMessage = "";
-        successful = false;
-        usernameAvailable = false;
-    }
-
-    public boolean isUsernameAvailable() {
-        return usernameAvailable;
-    }
-
-    public void setUsernameAvailable(boolean usernameAvailable) {
-        this.usernameAvailable = usernameAvailable;
     }
 
     public String getErrorMessage() {
@@ -47,15 +35,7 @@ public class Register implements Serializable {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getPassword() {
         return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 }
