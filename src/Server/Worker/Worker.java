@@ -3,7 +3,6 @@ package Server.Worker;
 import Server.DataManager;
 
 import java.io.*;
-import java.net.Socket;
 
 public abstract class Worker implements Runnable{
     DataManager dataManager;

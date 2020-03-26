@@ -82,10 +82,10 @@ public class Client {
     private void printInfo() {
         System.out.println("** printing a list of all commands");
         System.out.println("** enter [command]-help to get infos for a specific command");
-        System.out.println("/login");
-        System.out.println("/register");
-        System.out.println("/autoregister");
-        System.out.println("/exit");
+        System.out.println("login");
+        System.out.println("register");
+        System.out.println("autoregister");
+        System.out.println("exit");
     }
 
     public void start() {
@@ -107,13 +107,15 @@ public class Client {
 
     private void chatLoop() {
         startConnection();
+        MessageReaderWorker readerWorker = new MessageReaderWorker(serverIn);
+        Thread t = new Thread(readerWorker);
+        t.start();
         while (isLoggedIn()) {
-            MessageReaderWorker messageReaderWorker = new MessageReaderWorker(serverIn, username);
-            Thread t = new Thread(messageReaderWorker);
-            t.start();
             try {
-                System.out.println(username + ": ");
+
                 String messageText = userInput.readLine();
+                System.out.println(username + ": ");
+                System.out.println(messageText);
                 if (messageText.equals("logout")) {
                     logoutDialog();
                 }

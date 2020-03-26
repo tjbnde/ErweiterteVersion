@@ -4,17 +4,12 @@ import Model.Message;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.net.Socket;
 
 public class MessageReaderWorker implements Runnable{
-    private Socket connection;
     private ObjectInputStream serverIn;
-    private String username;
+    private Message myMessage;
 
-    Message myMessage;
-    public MessageReaderWorker(ObjectInputStream serverIn, String username) {
-        this.username = username;
-        connection = null;
+    public MessageReaderWorker(ObjectInputStream serverIn) {
         this.serverIn = serverIn;
         myMessage = null;
     }
@@ -25,6 +20,7 @@ public class MessageReaderWorker implements Runnable{
             while (true) {
                 try {
                     myMessage = (Message) serverIn.readObject();
+                    System.out.println();
                     System.out.println(myMessage.getHeader().getSendFrom() + ": ");
                     System.out.println(myMessage.getText());
                 } catch (ClassNotFoundException e) {

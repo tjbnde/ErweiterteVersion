@@ -23,6 +23,7 @@ public class Server {
     private ObjectOutputStream clientOut;
 
     public Server(int id, int port) {
+
         dataManager = new DataManager("user.txt", "chatList.txt", "chat.txt");
         this.id = id;
         try {

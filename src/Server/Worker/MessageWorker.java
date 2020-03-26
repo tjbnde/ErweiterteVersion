@@ -18,15 +18,30 @@ public class MessageWorker extends Worker {
     }
 
     public void run() {
-        try {
-            dataManager.writeMessage(myMessage);
-            clientTo = getChatPartnerSocket();
-            if(clientTo != null) {
+        dataManager.loginUser(myMessage.getHeader().getSendFrom(), clientOut);
+        dataManager.writeMessage(myMessage);
+        clientTo = getChatPartnerSocket();
+        if (clientTo != null) {
+            try {
                 clientTo.writeObject(myMessage);
                 clientTo.flush();
+            } catch (IOException e) {
+                System.err.println(e);
             }
-        } catch (IOException e) {
-            System.err.println(e);
+        }
+
+        while(true) {
+            try {
+                myMessage = (Message) clientIn.readObject();
+                dataManager.writeMessage(myMessage);
+                clientTo = getChatPartnerSocket();
+                if (clientTo != null) {
+                    clientTo.writeObject(myMessage);
+                    clientTo.flush();
+                }
+            } catch (IOException | ClassNotFoundException e) {
+                System.err.println(e);
+            }
         }
     }
 

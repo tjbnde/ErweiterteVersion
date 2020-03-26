@@ -2,7 +2,6 @@ package Model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.UUID;
 
 public class Chat implements Serializable {
     private String chatId;
