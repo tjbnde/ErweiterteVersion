@@ -2,22 +2,36 @@ package Server.Worker;
 
 import Model.Message;
 import Server.DataManager;
+import Server.Server;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class TwoPhaseCommitWorker implements Runnable {
+    private Socket connectionToOtherServer;
     private ObjectInputStream serverIn;
     private ObjectOutputStream serverOut;
-    private Object nextElement;
+
+
+    private String hostname;
+    private ServerSocket server;
+
     private DataManager dataManager;
 
-    public TwoPhaseCommitWorker(DataManager dataManager, ObjectInputStream serverIn, ObjectOutputStream serverOut) {
-        this.serverIn = serverIn;
-        this.serverOut = serverOut;
+    public TwoPhaseCommitWorker(DataManager dataManager, int port) {
         this.dataManager = dataManager;
+        try {
+            server = new ServerSocket(port);
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+        connectionToOtherServer = null;
+        serverIn = null;
+        serverOut = null;
     }
+
 
 
 
@@ -26,7 +40,13 @@ public class TwoPhaseCommitWorker implements Runnable {
     public void run() {
         while(true) {
             try {
-                nextElement = serverIn.readObject();
+                connectionToOtherServer = server.accept();
+                InputStream inputStream = connectionToOtherServer.getInputStream();
+                serverIn = new ObjectInputStream(inputStream);
+                OutputStream outputStream = connectionToOtherServer.getOutputStream();
+                serverOut = new ObjectOutputStream(outputStream);
+
+                Object nextElement = serverIn.readObject();
                 if(nextElement instanceof Message) {
                     Message myMessage = (Message) nextElement;
                     switch(myMessage.getStatus()) {

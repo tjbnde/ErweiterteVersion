@@ -7,6 +7,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.Buffer;
 
 public class Server {
     // id for identifaction between servers
@@ -44,25 +45,33 @@ public class Server {
         this.id = id;
 
         dataManager = new DataManager("user.txt", "chatList.txt", "chat.txt", "log.txt");
+        int communicationPort = Integer.parseInt(dataManager.getProperties().getProperty("communicationPort"));
+        int twoPhaseCommitPort = Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort"));
 
         hostnames = new String[]{dataManager.getProperties().getProperty("hostname1"), dataManager.getProperties().getProperty("hostname2")};
-        serverPorts = new int[]{Integer.parseInt(dataManager.getProperties().getProperty("port1")), Integer.parseInt(dataManager.getProperties().getProperty("port2"))};
+
+
         try {
             server = new ServerSocket(port);
             System.out.println("Server " + id + " successfully started at hostname: " + hostname + " - port: " + port);
 
             // get address information about other server
             String otherServerHostname = getOtherServerHostname();
-            int otherServerPort = getOtherServerPort();
 
-            BufferedReader systemInput = new BufferedReader(new InputStreamReader(System.in));
-            String startLine = "";
-            while (!startLine.equals("START")) {
-                startLine = systemInput.readLine();
+            TwoPhaseCommitWorker twoPhaseCommitWorker = new TwoPhaseCommitWorker(dataManager, twoPhaseCommitPort);
+            Thread twoPhaseCommitThread =  new Thread(twoPhaseCommitWorker);
+            twoPhaseCommitThread.start();
+
+            BufferedReader systemReader = new BufferedReader(new InputStreamReader(System.in));
+            System.out.println("** type run to start the server");
+            String line = systemReader.readLine();
+            while(!line.equals("start")) {
+                System.err.println("** type run to start the server");
+                line = systemReader.readLine();
             }
-
+            
             // connection to other server for Two-Phase-Commit  Protocol
-            serverConnection = new Socket(InetAddress.getByName(otherServerHostname), otherServerPort);
+            serverConnection = new Socket(InetAddress.getByName(otherServerHostname), twoPhaseCommitPort);
             InputStream inputStream = serverConnection.getInputStream();
             serverIn = new ObjectInputStream(inputStream);
             OutputStream outputStream = serverConnection.getOutputStream();
@@ -73,19 +82,6 @@ public class Server {
         }
     }
 
-    /**
-     * method figuring out on what port the other server listens for communication
-     * @return returns port of other server for 2 phase locking
-     */
-    private int getOtherServerPort() {
-        if(serverPorts[0] == port) {
-            return serverPorts[1];
-        } else {
-            return serverPorts[0];
-        }
-    }
-
-
     private String getOtherServerHostname() {
         if(hostnames[0].equals(hostname)) {
             return hostnames[1];
@@ -95,9 +91,7 @@ public class Server {
     }
 
     public void start() {
-        TwoPhaseCommitWorker twoPhaseCommitWorker = new TwoPhaseCommitWorker(dataManager, serverIn, serverOut);
-        Thread twoPhaseCommitThread =  new Thread(twoPhaseCommitWorker);
-        twoPhaseCommitThread.start();
+
         while (true) {
             try {
                 connection = server.accept();
