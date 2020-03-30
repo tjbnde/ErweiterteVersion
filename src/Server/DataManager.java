@@ -15,15 +15,18 @@ public class DataManager {
     private File userFile;
     private File chatListFile;
     private File chatFile;
+    private File loggedUserFile;
+    private File logFile;
 
     private HashMap<String, Client> registeredUsers;
     private HashMap<String, Chat> existingChatList;
     private HashMap<String, ObjectOutputStream> loggedUsers;
 
-    public DataManager(String userFileName, String chatListFileName, String chatFileName) {
+    public DataManager(String userFileName, String chatListFileName, String chatFileName, String logFileName) {
         userFile = new File(userFileName);
         chatListFile = new File(chatListFileName);
         chatFile = new File(chatFileName);
+        logFile = new File(logFileName);
 
         registeredUsers = new HashMap<>();
         existingChatList = new HashMap<>();
@@ -173,6 +176,33 @@ public class DataManager {
             System.err.println(e);
         }
         readChats();
+    }
+
+    public boolean messageCanBeCommited(Message myMessage) {
+        return true;
+    }
+
+
+    public void abortMessage(Message myMessage) {
+
+    }
+
+    public void writeLogEntry(String logEntry) {
+        FileWriter writer = null;
+        try {
+            writer = new FileWriter(logFile, true);
+            writer.write(logEntry + "\n");
+        } catch (IOException e) {
+            System.err.println(e);
+        } finally {
+            if(writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    System.err.println(e);
+                }
+            }
+        }
     }
 
     public void addChat(Chat myChat) {

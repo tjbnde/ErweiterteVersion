@@ -350,12 +350,11 @@ public class Client {
     }
 
     private int returnRandom() {
-        /*double random = Math.random();
+        double random = Math.random();
         if (random < 0.5) {
             return 0;
         } else {
             return 1;
-        }*/
-        return 0;
+        }
     }
 }

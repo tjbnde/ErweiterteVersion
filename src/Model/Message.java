@@ -6,6 +6,7 @@ import java.util.Date;
 public class Message implements Serializable, Comparable {
     private MessageHeader header;
     private String text;
+    private String status;
 
     public Message(String messageID, String sendFrom, String sendTo, String globalLamportCounterString, String sendSuccessfulString, String timeSendString, String text) {
         long timeSendLong = Long.parseLong(timeSendString);
@@ -14,11 +15,13 @@ public class Message implements Serializable, Comparable {
         int globalLamportCounter = Integer.parseInt(globalLamportCounterString);
         header = new MessageHeader(messageID, sendFrom, sendTo, globalLamportCounter, sendSuccessful, timeSend);
         this.text = text;
+        status = "OK";
     }
 
     public Message(String sendFrom, String sendTo, int globalLamportCounter, String text) {
         header = new MessageHeader(sendFrom, sendTo, globalLamportCounter);
         this.text = text;
+        status = "";
     }
 
     public String toString(){
@@ -31,6 +34,14 @@ public class Message implements Serializable, Comparable {
         messageToString += header.getTimeSend().getTime() + "#%#";
         messageToString += text;
         return messageToString;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public MessageHeader getHeader() {

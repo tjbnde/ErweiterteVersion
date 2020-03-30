@@ -8,29 +8,85 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Server {
-    public static final boolean RUNNING = true;
-    public static final int DEFAULT_PORT = 7777;
-
+    // id for identifaction between servers
     private int id;
 
-    private DataManager dataManager;
+    // hostname and port for own socket
+    private String hostname;
+    private int port;
 
+    /**
+     * Test
+     */
     private ServerSocket server;
+
+    private DataManager dataManager;
 
     // connection to client
     private Socket connection;
     private ObjectInputStream clientIn;
     private ObjectOutputStream clientOut;
 
-    public Server(int id, int port) {
+    // hostname and ports to get connection to other server
+    private int[] serverPorts;
+    private String[] hostnames;
 
-        dataManager = new DataManager("user.txt", "chatList.txt", "chat.txt");
+    // connection to other server for Two-Phase-Commit Protocol
+    private Socket serverConnection;
+    private ObjectInputStream serverIn;
+    private ObjectOutputStream serverOut;
+
+
+    public Server(String hostname, int port, int id) {
+        this.hostname = hostname;
+        this.port = port;
         this.id = id;
+
+        dataManager = new DataManager("user.txt", "chatList.txt", "chat.txt", "log.txt");
+
+        serverPorts = new int[]{6666, 8888};
+        hostnames = new String[]{"localhost", "localhost"};
+
         try {
             server = new ServerSocket(port);
             System.out.println("Server " + id + " successfully started on port " + port);
+
+            // get address information about other server
+            String otherServerHostname = getOtherServerHostname();
+            int otherServerPort = getOtherServerPort();
+
+            // connection to other server for Two-Phase-Commit  Protocol
+            serverConnection = new Socket(otherServerHostname, otherServerPort);
+            InputStream inputStream = serverConnection.getInputStream();
+            serverIn = new ObjectInputStream(inputStream);
+            OutputStream outputStream = serverConnection.getOutputStream();
+            serverOut = new ObjectOutputStream(outputStream);
+            TwoPhaseCommitWorker twoPhaseCommitWorker = new TwoPhaseCommitWorker(dataManager, serverIn, serverOut);
+            Thread twoPhaseCommitThread = new Thread(twoPhaseCommitWorker);
+            twoPhaseCommitThread.start();
         } catch (IOException e) {
             System.err.println(e);
+        }
+    }
+
+    /**
+     * method figuring out on what port the other server listens for communication
+     * @return returns port of other server for 2 phase locking
+     */
+    private int getOtherServerPort() {
+        if(serverPorts[0] == port) {
+            return serverPorts[1];
+        } else {
+            return serverPorts[0];
+        }
+    }
+
+
+    private String getOtherServerHostname() {
+        if(hostnames[0].equals(hostname)) {
+            return hostnames[1];
+        } else {
+            return hostnames[0];
         }
     }
 
@@ -71,7 +127,7 @@ public class Server {
             t = new Thread(chatWorker);
         } else if (nextElement instanceof Message) {
             Message myMessage = (Message) nextElement;
-            MessageWorker messageWorker = new MessageWorker(dataManager, clientOut, clientIn, myMessage);
+            MessageWorker messageWorker = new MessageWorker(dataManager, clientOut, clientIn, myMessage, serverIn, serverOut);
             t = new Thread(messageWorker);
         }
         return t;
