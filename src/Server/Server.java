@@ -49,11 +49,17 @@ public class Server {
         serverPorts = new int[]{Integer.parseInt(dataManager.getProperties().getProperty("port1")), Integer.parseInt(dataManager.getProperties().getProperty("port2"))};
         try {
             server = new ServerSocket(port);
-            System.out.println("Server " + id + " successfully started on port " + port);
+            System.out.println("Server " + id + " successfully started at hostname: " + hostname + " - port: " + port);
 
             // get address information about other server
             String otherServerHostname = getOtherServerHostname();
             int otherServerPort = getOtherServerPort();
+
+            BufferedReader systemInput = new BufferedReader(new InputStreamReader(System.in));
+            String startLine = "";
+            while (!startLine.equals("START")) {
+                startLine = systemInput.readLine();
+            }
 
             // connection to other server for Two-Phase-Commit  Protocol
             serverConnection = new Socket(InetAddress.getByName(otherServerHostname), otherServerPort);
@@ -61,6 +67,7 @@ public class Server {
             serverIn = new ObjectInputStream(inputStream);
             OutputStream outputStream = serverConnection.getOutputStream();
             serverOut = new ObjectOutputStream(outputStream);
+            System.out.println("** server connection established");
         } catch (IOException e) {
             System.err.println(e);
         }
