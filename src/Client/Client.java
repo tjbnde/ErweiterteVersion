@@ -12,7 +12,8 @@ import java.util.Properties;
 public class Client {
     // adresses of server
     private String[] serverHostname;
-    private int[] serverPort;
+
+    private int communicationPort;
 
     // connection to server and streams
     private Socket connection;
@@ -64,7 +65,7 @@ public class Client {
             System.err.println(e);
         }
         serverHostname = new String[]{properties.getProperty("hostname1"), properties.getProperty("hostname2")};
-        serverPort = new int[]{Integer.parseInt(properties.getProperty("port1")), Integer.parseInt(properties.getProperty("port2"))};
+        communicationPort = Integer.parseInt(properties.getProperty("communicationPort"));
     }
 
     private void enterSystem() {
@@ -170,13 +171,11 @@ public class Client {
 
     private void startConnection() {
         // contact a random sevrer
-        int random = returnRandom();
-        responsiveServerPort = serverPort[random];
-        responsiveServerHostname = serverHostname[random];
+        responsiveServerHostname = returnRandomServerHostname();
 
         try {
             // connection to responsive server
-            connection = new Socket(InetAddress.getByName(responsiveServerHostname), responsiveServerPort);
+            connection = new Socket(InetAddress.getByName(responsiveServerHostname), communicationPort);
             OutputStream outputStream = connection.getOutputStream();
             serverOut = new ObjectOutputStream(outputStream);
             InputStream inputStream = connection.getInputStream();
@@ -361,13 +360,12 @@ public class Client {
         this.chat = chat;
     }
 
-    private int returnRandom() {
-       /* double random = Math.random();
+    private String returnRandomServerHostname() {
+        double random = Math.random();
         if (random < 0.5) {
-            return 0;
+            return serverHostname[0];
         } else {
-            return 1;
-        }*/
-       return 0;
+            return serverHostname[1];
+        }
     }
 }

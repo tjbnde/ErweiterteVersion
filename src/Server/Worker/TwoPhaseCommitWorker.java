@@ -41,10 +41,11 @@ public class TwoPhaseCommitWorker implements Runnable {
         while(true) {
             try {
                 connectionToOtherServer = server.accept();
-                InputStream inputStream = connectionToOtherServer.getInputStream();
-                serverIn = new ObjectInputStream(inputStream);
                 OutputStream outputStream = connectionToOtherServer.getOutputStream();
                 serverOut = new ObjectOutputStream(outputStream);
+                InputStream inputStream = connectionToOtherServer.getInputStream();
+                serverIn = new ObjectInputStream(inputStream);
+
 
                 Object nextElement = serverIn.readObject();
                 if(nextElement instanceof Message) {

@@ -39,7 +39,7 @@ public class Server {
     private ObjectOutputStream serverOut;
 
 
-    public Server(String hostname, int port, int id) {
+    public Server(String hostname, int id) {
         this.hostname = hostname;
         this.port = port;
         this.id = id;
@@ -52,8 +52,8 @@ public class Server {
 
 
         try {
-            server = new ServerSocket(port);
-            System.out.println("Server " + id + " successfully started at hostname: " + hostname + " - port: " + port);
+            server = new ServerSocket(communicationPort);
+            System.out.println("Server " + id + " successfully started at hostname: " + hostname + " - port: " + communicationPort);
 
             // get address information about other server
             String otherServerHostname = getOtherServerHostname();
@@ -65,11 +65,11 @@ public class Server {
             BufferedReader systemReader = new BufferedReader(new InputStreamReader(System.in));
             System.out.println("** type run to start the server");
             String line = systemReader.readLine();
-            while(!line.equals("start")) {
+            while(!line.equals("run")) {
                 System.err.println("** type run to start the server");
                 line = systemReader.readLine();
             }
-            
+
             // connection to other server for Two-Phase-Commit  Protocol
             serverConnection = new Socket(InetAddress.getByName(otherServerHostname), twoPhaseCommitPort);
             InputStream inputStream = serverConnection.getInputStream();
