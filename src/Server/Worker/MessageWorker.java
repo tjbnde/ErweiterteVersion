@@ -65,7 +65,6 @@ public class MessageWorker extends Worker {
             System.err.println(e);
         }
         return false;
-
     }
 
 

@@ -1,22 +1,76 @@
 package Server.Worker;
 
 import Model.Login;
+import Model.Message;
 import Server.DataManager;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.net.InetAddress;
+import java.net.Socket;
 
 public class LoginWorker extends Worker {
     private Login newLogin;
 
-    public LoginWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Login newLogin) {
+    private String hostname;
+    private Socket serverConnection;
+    private ObjectInputStream serverIn;
+    private ObjectOutputStream serverOut;
+
+    public LoginWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Login newLogin, String hostname) {
         super(dataManager, clientOut, clientIn);
-        this.dataManager = dataManager;
         this.newLogin = newLogin;
+        this.hostname = hostname;
+    }
+    private boolean twoPhaseCommitLogin() {
+        dataManager.writeLogEntry(System.currentTimeMillis() + " - preparing user " + (newLogin.getUsername()) + "for committing");
+        newLogin.setStatus("PREPARE");
+        try {
+            serverOut.writeObject(newLogin);
+            serverOut.flush();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+
+        try {
+            newLogin = (Login) serverIn.readObject();
+            if (newLogin.getStatus().equals("READY")) {
+                newLogin.setStatus("COMMIT");
+            } else {
+                newLogin.setStatus("ABORT");
+                serverOut.writeObject(newLogin);
+                serverOut.flush();
+                return false;
+            }
+            serverOut.writeObject(newLogin);
+            serverOut.flush();
+
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println(e);
+        }
+
+        try {
+            newLogin = (Login) serverIn.readObject();
+            if (newLogin.getStatus().equals("OK")) {
+                return true;
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println(e);
+        }
+        return false;
+
     }
 
     public void run() {
+        try {
+            serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
+            InputStream inputStream = serverConnection.getInputStream();
+            serverIn = new ObjectInputStream(inputStream);
+            OutputStream outputStream = serverConnection.getOutputStream();
+            serverOut = new ObjectOutputStream(outputStream);
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+
         if (dataManager.validateUser(newLogin.getUsername(), newLogin.getPassword())) {
             newLogin.setSuccessful(true);
             newLogin.setErrorMessage("");

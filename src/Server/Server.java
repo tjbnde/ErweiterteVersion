@@ -61,13 +61,6 @@ public class Server {
             Thread twoPhaseCommitThread =  new Thread(twoPhaseCommitWorker);
             twoPhaseCommitThread.start();
 
-            BufferedReader systemReader = new BufferedReader(new InputStreamReader(System.in));
-            System.out.println("** type run to start the server");
-            String line = systemReader.readLine();
-            while(!line.equals("run")) {
-                System.err.println("** type run to start the server");
-                line = systemReader.readLine();
-            }
         } catch (IOException e) {
             System.err.println(e);
         }
@@ -107,7 +100,7 @@ public class Server {
         Thread t = null;
         if (nextElement instanceof Login) {
             Login myLogin = (Login) nextElement;
-            LoginWorker loginWorker = new LoginWorker(dataManager, clientOut, clientIn, myLogin);
+            LoginWorker loginWorker = new LoginWorker(dataManager, clientOut, clientIn, myLogin, getOtherServerHostname());
             t = new Thread(loginWorker);
         } else if (nextElement instanceof Register) {
             Register myRegister = (Register) nextElement;
@@ -119,7 +112,7 @@ public class Server {
             t = new Thread(chatWorker);
         } else if (nextElement instanceof Message) {
             Message myMessage = (Message) nextElement;
-            MessageWorker messageWorker = new MessageWorker(dataManager, clientOut, clientIn, myMessage, serverIn, serverOut);
+            MessageWorker messageWorker = new MessageWorker(dataManager, clientOut, clientIn, myMessage, getOtherServerHostname());
             t = new Thread(messageWorker);
         }
         return t;

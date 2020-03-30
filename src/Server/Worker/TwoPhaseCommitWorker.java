@@ -1,11 +1,10 @@
 package Server.Worker;
 
+import Model.Login;
 import Model.Message;
 import Server.DataManager;
-import Server.Server;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -14,8 +13,6 @@ public class TwoPhaseCommitWorker implements Runnable {
     private ObjectInputStream serverIn;
     private ObjectOutputStream serverOut;
 
-
-    private String hostname;
     private ServerSocket server;
 
     private DataManager dataManager;
@@ -31,10 +28,6 @@ public class TwoPhaseCommitWorker implements Runnable {
         serverIn = null;
         serverOut = null;
     }
-
-
-
-
 
     @Override
     public void run() {
@@ -74,6 +67,26 @@ public class TwoPhaseCommitWorker implements Runnable {
                     }
                     serverOut.writeObject(myMessage);
                     serverOut.flush();
+                } else if(nextElement instanceof Login) {
+                    Login myLogin = (Login) nextElement;
+                    switch (myLogin.getStatus()) {
+                        case "PREPARE":
+                            dataManager.writeLogEntry(System.currentTimeMillis() + " - testing if login of user " + myLogin.getUsername() + "is successful");
+                            if(dataManager.loginCanBeCommited(myLogin)){
+                                myLogin.setStatus("READY");
+                                dataManager.writeLogEntry(System.currentTimeMillis() + " - login of user " + myLogin.getUsername() + " can be committed locally");
+                            } else {
+                                myLogin.setStatus("ABORT");
+                                dataManager.writeLogEntry(System.currentTimeMillis() + " - login of user " + myLogin.getUsername() + " can not be committed locally");
+                            }
+                            break;
+                        case "COMMIT":
+
+                            break;
+                        case "ABORT":
+                            break;
+
+                    }
                 }
 
             } catch(IOException | ClassNotFoundException e) {

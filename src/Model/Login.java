@@ -10,6 +10,8 @@ public class Login implements Serializable {
     private boolean successful;
     private String errorMessage;
 
+    private String status;
+
 
 
     public Login(String username, String password) {
@@ -18,9 +20,16 @@ public class Login implements Serializable {
         ;
         this.successful = false;
         this.errorMessage = "";
+        status = "";
     }
 
+    public String getStatus() {
+        return status;
+    }
 
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
     public String getUsername() {
         return username;

@@ -2,6 +2,7 @@ package Server;
 
 import Client.Client;
 import Model.Chat;
+import Model.Login;
 import Model.Message;
 import Model.Register;
 
@@ -190,12 +191,18 @@ public class DataManager {
     }
 
     public boolean messageCanBeCommited(Message myMessage) {
+        // TODO
+        return true;
+    }
+
+    public boolean loginCanBeCommited(Login myLogin) {
+        // TODO
         return true;
     }
 
 
     public void abortMessage(Message myMessage) {
-
+        // TODO
     }
 
     public void writeLogEntry(String logEntry) {
