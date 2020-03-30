@@ -4,7 +4,7 @@ import Server.Server;
 
 public class Server1 {
     public static void main(String[] args) {
-        Server myServer = new Server(1, 6666);
+        Server myServer = new Server("192.168.178.62" , 6666, 1);
         myServer.start();
     }
 }

@@ -71,7 +71,7 @@ public class MessageWorker extends Worker {
 
     private void chatLoop() {
         while (true) {
-            if(committingMessage()) {
+           // if(committingMessage()) {
                 try {
                     myMessage = (Message) clientIn.readObject();
                     dataManager.writeMessage(myMessage);
@@ -83,15 +83,15 @@ public class MessageWorker extends Worker {
                 } catch (IOException | ClassNotFoundException e) {
                     System.err.println(e);
                 }
-            } else {
+           /* } else {
                 bufferMessage();
-            }
+            }*/
 
         }
     }
 
     public void run() {
-        if (committingMessage()) {
+       // if (committingMessage()) {
             dataManager.loginUser(myMessage.getHeader().getSendFrom(), clientOut);
             dataManager.writeMessage(myMessage);
             clientTo = getChatPartnerSocket();
@@ -103,9 +103,9 @@ public class MessageWorker extends Worker {
                     System.err.println(e);
                 }
             }
-        } else {
+       /* } else {
             bufferMessage();
-        }
+        }*/
         chatLoop();
     }
 

@@ -4,8 +4,10 @@ import Client.Worker.MessageReaderWorker;
 import Model.*;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Iterator;
+import java.util.Properties;
 
 public class Client {
     // adresses of server
@@ -34,28 +36,35 @@ public class Client {
     // counter for lamport
     private int globalLamportCounter;
 
+    private Properties properties;
+
     public Client() {
         username = "";
         password = "";
-        chat = null;
-        userInput = new BufferedReader(new InputStreamReader(System.in));
-        responsiveServerPort = 0;
-        responsiveServerHostname = "";
-        serverPort = new int[]{6666, 8888};
-        serverHostname = new String[]{"localhost", "localhost"};
-        globalLamportCounter = 0;
+        init();
     }
 
     public Client(String username, String password) {
         this.username = username;
         this.password = password;
+        init();
+    }
+
+    private void init(){
         chat = null;
         userInput = new BufferedReader(new InputStreamReader(System.in));
         responsiveServerPort = 0;
         responsiveServerHostname = "";
-        serverPort = new int[]{6666, 8888};
-        serverHostname = new String[]{"localhost", "localhost"};
         globalLamportCounter = 0;
+        properties = new Properties();
+        try {
+            FileInputStream propertiesInputStream = new FileInputStream("config.properties") ;
+            properties.load(propertiesInputStream);
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+        serverHostname = new String[]{properties.getProperty("hostname1"), properties.getProperty("hostname2")};
+        serverPort = new int[]{Integer.parseInt(properties.getProperty("port1")), Integer.parseInt(properties.getProperty("port2"))};
     }
 
     private void enterSystem() {
@@ -112,8 +121,11 @@ public class Client {
         t.start();
         while (isLoggedIn()) {
             try {
+                String messageText = null;
+                while(messageText == null || messageText.isEmpty()) {
+                    messageText = userInput.readLine();
+                }
 
-                String messageText = userInput.readLine();
                 System.out.println(username + ": ");
                 System.out.println(messageText);
                 if (messageText.equals("logout")) {
@@ -164,7 +176,7 @@ public class Client {
 
         try {
             // connection to responsive server
-            connection = new Socket(responsiveServerHostname, responsiveServerPort);
+            connection = new Socket(InetAddress.getByName(responsiveServerHostname), responsiveServerPort);
             OutputStream outputStream = connection.getOutputStream();
             serverOut = new ObjectOutputStream(outputStream);
             InputStream inputStream = connection.getInputStream();
@@ -350,11 +362,12 @@ public class Client {
     }
 
     private int returnRandom() {
-        double random = Math.random();
+       /* double random = Math.random();
         if (random < 0.5) {
             return 0;
         } else {
             return 1;
-        }
+        }*/
+       return 0;
     }
 }

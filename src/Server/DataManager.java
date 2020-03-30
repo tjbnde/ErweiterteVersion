@@ -6,10 +6,7 @@ import Model.Message;
 import Model.Register;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Scanner;
+import java.util.*;
 
 public class DataManager {
     private File userFile;
@@ -17,6 +14,8 @@ public class DataManager {
     private File chatFile;
     private File loggedUserFile;
     private File logFile;
+
+    private Properties properties;
 
     private HashMap<String, Client> registeredUsers;
     private HashMap<String, Chat> existingChatList;
@@ -28,6 +27,15 @@ public class DataManager {
         chatFile = new File(chatFileName);
         logFile = new File(logFileName);
 
+        properties = new Properties();
+
+        try {
+            FileInputStream propertiesInputStream = new FileInputStream("config.properties") ;
+            properties.load(propertiesInputStream);
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+
         registeredUsers = new HashMap<>();
         existingChatList = new HashMap<>();
         loggedUsers = new HashMap<>();
@@ -36,6 +44,9 @@ public class DataManager {
         readChats();
     }
 
+    public Properties getProperties() {
+        return properties;
+    }
 
     public void addUser(Register newRegister) {
         try {

@@ -4,6 +4,7 @@ import Model.*;
 import Server.Worker.*;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -44,9 +45,8 @@ public class Server {
 
         dataManager = new DataManager("user.txt", "chatList.txt", "chat.txt", "log.txt");
 
-        serverPorts = new int[]{6666, 8888};
-        hostnames = new String[]{"localhost", "localhost"};
-
+        hostnames = new String[]{dataManager.getProperties().getProperty("hostname1"), dataManager.getProperties().getProperty("hostname2")};
+        serverPorts = new int[]{Integer.parseInt(dataManager.getProperties().getProperty("port1")), Integer.parseInt(dataManager.getProperties().getProperty("port2"))};
         try {
             server = new ServerSocket(port);
             System.out.println("Server " + id + " successfully started on port " + port);
@@ -56,14 +56,11 @@ public class Server {
             int otherServerPort = getOtherServerPort();
 
             // connection to other server for Two-Phase-Commit  Protocol
-            serverConnection = new Socket(otherServerHostname, otherServerPort);
+            serverConnection = new Socket(InetAddress.getByName(otherServerHostname), otherServerPort);
             InputStream inputStream = serverConnection.getInputStream();
             serverIn = new ObjectInputStream(inputStream);
             OutputStream outputStream = serverConnection.getOutputStream();
             serverOut = new ObjectOutputStream(outputStream);
-            TwoPhaseCommitWorker twoPhaseCommitWorker = new TwoPhaseCommitWorker(dataManager, serverIn, serverOut);
-            Thread twoPhaseCommitThread = new Thread(twoPhaseCommitWorker);
-            twoPhaseCommitThread.start();
         } catch (IOException e) {
             System.err.println(e);
         }
@@ -91,6 +88,9 @@ public class Server {
     }
 
     public void start() {
+        TwoPhaseCommitWorker twoPhaseCommitWorker = new TwoPhaseCommitWorker(dataManager, serverIn, serverOut);
+        Thread twoPhaseCommitThread =  new Thread(twoPhaseCommitWorker);
+        twoPhaseCommitThread.start();
         while (true) {
             try {
                 connection = server.accept();
