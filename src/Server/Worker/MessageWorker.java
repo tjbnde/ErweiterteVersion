@@ -3,27 +3,31 @@ package Server.Worker;
 import Model.Message;
 import Server.DataManager;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.net.InetAddress;
+import java.net.Socket;
 
 public class MessageWorker extends Worker {
 
     private Message myMessage;
     private ObjectOutputStream clientTo;
+
+
+    private String hostname;
+    private Socket serverConnection;
     private ObjectInputStream serverIn;
     private ObjectOutputStream serverOut;
 
-    public MessageWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Message myMessage, ObjectInputStream serverIn, ObjectOutputStream serverOut) {
+    public MessageWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Message myMessage, String hostname) {
         super(dataManager, clientOut, clientIn);
         this.myMessage = myMessage;
-        this.serverIn = serverIn;
-        this.serverOut = serverOut;
+        this.hostname = hostname;
+        serverIn = null;
+        serverOut = null;
     }
 
 
-
-    private boolean committingMessage() {
+    private boolean twoPhaseCommitMessage() {
         dataManager.writeLogEntry(System.currentTimeMillis() + " - preparing message " + (myMessage.getHeader().getMessageId()) + "for committing");
         myMessage.setStatus("PREPARE");
         try {
@@ -35,7 +39,7 @@ public class MessageWorker extends Worker {
 
         try {
             myMessage = (Message) serverIn.readObject();
-            if(myMessage.getStatus().equals("READY")) {
+            if (myMessage.getStatus().equals("READY")) {
                 dataManager.writeLogEntry(System.currentTimeMillis() + " - set message " + (myMessage.getHeader().getMessageId()) + "ready for committing");
                 myMessage.setStatus("COMMIT");
             } else {
@@ -54,44 +58,59 @@ public class MessageWorker extends Worker {
 
         try {
             myMessage = (Message) serverIn.readObject();
-            if(myMessage.getStatus().equals("OK")) {
+            if (myMessage.getStatus().equals("OK")) {
                 return true;
             }
-        } catch(IOException | ClassNotFoundException e) {
-                System.err.println(e);
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println(e);
         }
         return false;
 
     }
 
 
-    private void bufferMessage() {
+    private void bufferMessage(Message myMessage) {
 
     }
 
     private void chatLoop() {
         while (true) {
-           // if(committingMessage()) {
-                try {
-                    myMessage = (Message) clientIn.readObject();
+            try {
+                myMessage = (Message) clientIn.readObject();
+
+                // connection to other server for Two-Phase-Commit  Protocol
+                serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
+                InputStream inputStream = serverConnection.getInputStream();
+                serverIn = new ObjectInputStream(inputStream);
+                OutputStream outputStream = serverConnection.getOutputStream();
+                serverOut = new ObjectOutputStream(outputStream);
+
+                if(twoPhaseCommitMessage()) {
                     dataManager.writeMessage(myMessage);
                     clientTo = getChatPartnerSocket();
                     if (clientTo != null) {
                         clientTo.writeObject(myMessage);
                         clientTo.flush();
                     }
-                } catch (IOException | ClassNotFoundException e) {
-                    System.err.println(e);
+                } else {
+                    bufferMessage(myMessage);
                 }
-           /* } else {
-                bufferMessage();
-            }*/
-
+            } catch (IOException | ClassNotFoundException e) {
+                System.err.println(e);
+            } finally {
+                if (serverConnection != null) {
+                    try {
+                        serverConnection.close();
+                    } catch (IOException e) {
+                        System.err.println(e);
+                    }
+                }
+            }
         }
     }
 
     public void run() {
-       // if (committingMessage()) {
+        if(twoPhaseCommitMessage()) {
             dataManager.loginUser(myMessage.getHeader().getSendFrom(), clientOut);
             dataManager.writeMessage(myMessage);
             clientTo = getChatPartnerSocket();
@@ -103,9 +122,9 @@ public class MessageWorker extends Worker {
                     System.err.println(e);
                 }
             }
-       /* } else {
-            bufferMessage();
-        }*/
+        } else {
+            bufferMessage(myMessage);
+        }
         chatLoop();
     }
 

@@ -129,6 +129,7 @@ public class Client {
 
                 System.out.println(username + ": ");
                 System.out.println(messageText);
+                System.out.println();
                 if (messageText.equals("logout")) {
                     logoutDialog();
                 }

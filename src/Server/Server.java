@@ -7,7 +7,6 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.Buffer;
 
 public class Server {
     // id for identifaction between servers
@@ -69,14 +68,6 @@ public class Server {
                 System.err.println("** type run to start the server");
                 line = systemReader.readLine();
             }
-
-            // connection to other server for Two-Phase-Commit  Protocol
-            serverConnection = new Socket(InetAddress.getByName(otherServerHostname), twoPhaseCommitPort);
-            InputStream inputStream = serverConnection.getInputStream();
-            serverIn = new ObjectInputStream(inputStream);
-            OutputStream outputStream = serverConnection.getOutputStream();
-            serverOut = new ObjectOutputStream(outputStream);
-            System.out.println("** server connection established");
         } catch (IOException e) {
             System.err.println(e);
         }
