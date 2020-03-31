@@ -32,6 +32,16 @@ public class LoginWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         }
+        if(!dataManager.loginCanBeCommited(newLogin)) {
+            newLogin.setStatus("ABORT");
+            try {
+                serverOut.writeObject(newLogin);
+                serverOut.flush();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
+            return false;
+        }
 
         try {
             newLogin = (Login) serverIn.readObject();
@@ -75,13 +85,14 @@ public class LoginWorker extends Worker {
             System.err.println(e);
         }
 
-        if (dataManager.loginCanBeCommited(newLogin)) {
+        if(twoPhaseCommitLogin()) {
             newLogin.setSuccessful(true);
             newLogin.setErrorMessage("");
         } else {
             newLogin.setSuccessful(false);
             newLogin.setErrorMessage("** wrong username or password");
         }
+
         try {
             clientOut.writeObject(newLogin);
             clientOut.flush();
