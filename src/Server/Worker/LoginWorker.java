@@ -21,6 +21,8 @@ public class LoginWorker extends Worker {
         this.newLogin = newLogin;
         this.hostname = hostname;
     }
+
+
     private boolean twoPhaseCommitLogin() {
         dataManager.writeLogEntry(System.currentTimeMillis() + " - preparing user " + (newLogin.getUsername()) + "for committing");
         newLogin.setStatus("PREPARE");
@@ -35,6 +37,8 @@ public class LoginWorker extends Worker {
             newLogin = (Login) serverIn.readObject();
             if (newLogin.getStatus().equals("READY")) {
                 newLogin.setStatus("COMMIT");
+                serverOut.writeObject(clientOut);
+                serverOut.flush();
             } else {
                 newLogin.setStatus("ABORT");
                 serverOut.writeObject(newLogin);
@@ -71,7 +75,7 @@ public class LoginWorker extends Worker {
             System.err.println(e);
         }
 
-        if (dataManager.validateUser(newLogin.getUsername(), newLogin.getPassword())) {
+        if (dataManager.loginCanBeCommited(newLogin)) {
             newLogin.setSuccessful(true);
             newLogin.setErrorMessage("");
         } else {

@@ -13,6 +13,9 @@ public class TwoPhaseCommitWorker implements Runnable {
     private ObjectInputStream serverIn;
     private ObjectOutputStream serverOut;
 
+
+    private ObjectOutputStream clientOut;
+
     private ServerSocket server;
 
     private DataManager dataManager;
@@ -27,6 +30,7 @@ public class TwoPhaseCommitWorker implements Runnable {
         connectionToOtherServer = null;
         serverIn = null;
         serverOut = null;
+        clientOut = null;
     }
 
     @Override
@@ -81,12 +85,17 @@ public class TwoPhaseCommitWorker implements Runnable {
                             }
                             break;
                         case "COMMIT":
-
+                            ObjectOutputStream clientOut = (ObjectOutputStream) serverIn.readObject();
+                            dataManager.commitLogin(myLogin,clientOut);
+                            myLogin.setStatus("OK");
                             break;
                         case "ABORT":
+                            dataManager.abortLogin(myLogin);
+                            myLogin.setStatus("OK");
                             break;
-
                     }
+                    serverOut.writeObject(myLogin);
+                    serverOut.flush();
                 }
 
             } catch(IOException | ClassNotFoundException e) {

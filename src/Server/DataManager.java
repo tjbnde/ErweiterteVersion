@@ -105,6 +105,10 @@ public class DataManager {
         }
     }
 
+    public void abortLogin(Login myLogin) {
+        // TODO
+    }
+
     private void readChats() {
         try {
             Scanner chatFileReader = new Scanner(chatFile);
@@ -137,7 +141,7 @@ public class DataManager {
         }
     }
 
-    public boolean validateUser(String username, String password) {
+    private boolean validateUser(String username, String password) {
         if (registeredUsers.containsKey(username)) {
             Client user = registeredUsers.get(username);
             if (user.getPassword().equals(password)) {
@@ -196,8 +200,11 @@ public class DataManager {
     }
 
     public boolean loginCanBeCommited(Login myLogin) {
-        // TODO
-        return true;
+        return validateUser(myLogin.getUsername(), myLogin.getPassword());
+    }
+
+    public void commitLogin(Login myLogin, ObjectOutputStream clientOut) {
+        loggedUsers.put(myLogin.getUsername(), clientOut);
     }
 
 
@@ -246,4 +253,6 @@ public class DataManager {
             loggedUsers.put(username, clientOut);
         }
     }
+
+
 }
