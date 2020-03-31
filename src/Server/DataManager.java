@@ -203,8 +203,8 @@ public class DataManager {
         return validateUser(myLogin.getUsername(), myLogin.getPassword());
     }
 
-    public void commitLogin(Login myLogin, ObjectOutputStream clientOut) {
-        loggedUsers.put(myLogin.getUsername(), clientOut);
+    public void commitLogin(Login myLogin) {
+        loggedUsers.put(myLogin.getUsername(), null);
     }
 
 

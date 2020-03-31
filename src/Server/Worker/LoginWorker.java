@@ -1,7 +1,6 @@
 package Server.Worker;
 
 import Model.Login;
-import Model.Message;
 import Server.DataManager;
 
 import java.io.*;
@@ -32,7 +31,7 @@ public class LoginWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         }
-        if(!dataManager.loginCanBeCommited(newLogin)) {
+        if (!dataManager.loginCanBeCommited(newLogin)) {
             newLogin.setStatus("ABORT");
             try {
                 serverOut.writeObject(newLogin);
@@ -47,8 +46,6 @@ public class LoginWorker extends Worker {
             newLogin = (Login) serverIn.readObject();
             if (newLogin.getStatus().equals("READY")) {
                 newLogin.setStatus("COMMIT");
-                serverOut.writeObject(clientOut);
-                serverOut.flush();
             } else {
                 newLogin.setStatus("ABORT");
                 serverOut.writeObject(newLogin);
@@ -85,14 +82,13 @@ public class LoginWorker extends Worker {
             System.err.println(e);
         }
 
-        if(twoPhaseCommitLogin()) {
+        if (twoPhaseCommitLogin()) {
             newLogin.setSuccessful(true);
             newLogin.setErrorMessage("");
         } else {
             newLogin.setSuccessful(false);
             newLogin.setErrorMessage("** wrong username or password");
         }
-
         try {
             clientOut.writeObject(newLogin);
             clientOut.flush();
@@ -100,6 +96,13 @@ public class LoginWorker extends Worker {
             System.err.println(e);
         } finally {
             closeConnection();
+            if (serverConnection != null) {
+                try {
+                    serverConnection.close();
+                } catch (IOException e) {
+                    System.err.println(e);
+                }
+            }
         }
     }
 }
