@@ -85,8 +85,7 @@ public class TwoPhaseCommitWorker implements Runnable {
                             }
                             break;
                         case "COMMIT":
-                            ObjectOutputStream clientOut = (ObjectOutputStream) serverIn.readObject();
-                            dataManager.commitLogin(myLogin,clientOut);
+                            dataManager.commitLogin(myLogin);
                             myLogin.setStatus("OK");
                             break;
                         case "ABORT":
