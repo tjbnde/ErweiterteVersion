@@ -1,5 +1,6 @@
 package Server.Worker;
 
+import Model.Chat;
 import Model.Login;
 import Model.Message;
 import Model.Register;
@@ -133,6 +134,32 @@ public class TwoPhaseCommitWorker implements Runnable {
                     }
                     myRegister.setStatus("OK");
                     serverOut.writeObject(myRegister);
+                    serverOut.flush();
+                } else if(nextElement instanceof Chat) {
+                    Chat myChat = (Chat) nextElement;
+
+                    dataManager.writeLogEntry(new Date() + " - testing if chat " + myChat.getChatId() + " is successful");
+                    if (dataManager.chatCanBeCommited(myChat)) {
+                        myChat.setStatus("READY");
+                        dataManager.writeLogEntry(new Date() + " - chat " + myChat.getChatId() + " can be committed locally");
+                    } else {
+                        myChat.setStatus("ABORT");
+                        dataManager.writeLogEntry(new Date() + " - chat " + myChat.getChatId() + " can not be committed locally");
+                    }
+                    serverOut.writeObject(myChat);
+                    serverOut.flush();
+
+
+                    myChat = (Chat) serverIn.readObject();
+                    if (myChat.getStatus().equals("COMMIT")) {
+                        dataManager.commitChat(myChat);
+                        dataManager.writeLogEntry(new Date() + " - chat " + myChat.getChatId() + " committed locally");
+                    } else {
+                        dataManager.abortChat(myChat);
+                        dataManager.writeLogEntry(new Date() + " - chat " + myChat.getChatId() + " aborted locally");
+                    }
+                    myChat.setStatus("OK");
+                    serverOut.writeObject(myChat);
                     serverOut.flush();
                 }
             } catch (IOException | ClassNotFoundException e) {

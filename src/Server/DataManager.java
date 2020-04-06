@@ -208,6 +208,18 @@ public class DataManager {
         return !registeredUsers.containsKey(myRegister.getUsername());
     }
 
+    public boolean chatCanBeCommited(Chat myChat) {
+        if(myChat.getUserA().equals(myChat.getUserB())) {
+            myChat.setErrorMessage("** you can't send messages to yourself");
+            return false;
+        }
+        if(!userIsRegistered(myChat.getUserB())) {
+            myChat.setErrorMessage("** user \"" + myChat.getUserB() + "\" is not registered");
+            return false;
+        }
+        return true;
+    }
+
 
     /**
      * Schnittstelle die vom TwoPhaseCommitWorker aufgerufen wird
@@ -226,6 +238,15 @@ public class DataManager {
         writeMessage(myMessage);
     }
 
+    public void commitChat(Chat myChat) {
+        if (chatExists(myChat)) {
+            ArrayList<Message> messages = returnChatMessages(myChat);
+            myChat.setMessages(messages);
+        } else {
+            addChat(myChat);
+        }
+    }
+
 
     public void loginUser(Login myLogin, ObjectOutputStream clientOut) {
         loggedUsers.put(myLogin.getUsername(), clientOut);
@@ -233,6 +254,10 @@ public class DataManager {
 
 
     public void abortMessage(Message myMessage) {
+        // TODO
+    }
+
+    public void abortChat(Chat myChat) {
         // TODO
     }
 

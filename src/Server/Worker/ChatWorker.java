@@ -2,35 +2,91 @@ package Server.Worker;
 
 import Model.Chat;
 import Model.Message;
+import Model.Register;
 import Server.DataManager;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class ChatWorker extends Worker {
     Chat myChat;
 
-    public ChatWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Chat myChat) {
+    private String hostname;
+    private Socket serverConnection;
+    private ObjectInputStream serverIn;
+    private ObjectOutputStream serverOut;
+
+    public ChatWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Chat myChat, String hostname) {
         super(dataManager, clientOut, clientIn);
         this.myChat = myChat;
     }
 
+    private boolean twoPhaseCommitLogin() {
+        dataManager.writeLogEntry(new Date() + " - preparing commit for chat " + (myChat.getChatId()));
+        myChat.setStatus("PREPARE");
+        try {
+            serverOut.writeObject(myChat);
+            serverOut.flush();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
 
-    public void run() {
-        if (myChat.getUserA().equals(myChat.getUserB())) {
-            myChat.setErrorMessage("** you can't send messages to yourself");
+
+        if (!dataManager.chatCanBeCommited(myChat)) {
+            dataManager.writeLogEntry(new Date() + " - chat " + myChat.getChatId() + " can not be commited");
+            myChat.setStatus("ABORT");
             try {
-                clientOut.writeObject(myChat);
-                clientOut.flush();
+                serverOut.writeObject(myChat);
+                serverOut.flush();
             } catch (IOException e) {
                 System.err.println(e);
             }
-            return;
+            return false;
         }
-        if (dataManager.userIsRegistered(myChat.getUserB())) {
-            myChat.setSucessful(true);
+        try {
+            myChat = (Chat) serverIn.readObject();
+            if (myChat.getStatus().equals("READY")) {
+                myChat.setStatus("COMMIT");
+                dataManager.writeLogEntry(new Date() + " - chatr " + myChat.getChatId() + " can be commited");
+            } else {
+                myChat.setStatus("ABORT");
+                dataManager.writeLogEntry(new Date() + " - register for user " + myChat.getChatId() + " can not be commited");
+                serverOut.writeObject(myChat);
+                serverOut.flush();
+                return false;
+            }
+            serverOut.writeObject(myChat);
+            serverOut.flush();
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println(e);
+        }
+        try {
+            myChat = (Chat) serverIn.readObject();
+            if (myChat.getStatus().equals("OK")) {
+                return true;
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println(e);
+        }
+        return false;
+    }
+
+
+    public void run() {
+        try {
+            serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
+            InputStream inputStream = serverConnection.getInputStream();
+            serverIn = new ObjectInputStream(inputStream);
+            OutputStream outputStream = serverConnection.getOutputStream();
+            serverOut = new ObjectOutputStream(outputStream);
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+        if (twoPhaseCommitLogin()) {
+            myChat.setSuccessful(true);
             myChat.setErrorMessage("");
             if (dataManager.chatExists(myChat)) {
                 ArrayList<Message> messages = dataManager.returnChatMessages(myChat);
@@ -39,35 +95,38 @@ public class ChatWorker extends Worker {
                 dataManager.addChat(myChat);
             }
         } else {
-            myChat.setErrorMessage("** user \"" + myChat.getUserB() + "\" is not registered");
+            myChat.setSuccessful(false);
+            dataManager.writeLogEntry(new Date() + " - chat " + myChat.getChatId() + " not successful");
         }
         try {
             clientOut.writeObject(myChat);
             clientOut.flush();
         } catch (IOException e) {
             System.err.println(e);
+        } finally {
+            if (serverConnection != null) {
+                try {
+                    serverConnection.close();
+                } catch (IOException e) {
+                    System.err.println(e);
+                }
+            }
         }
         start();
     }
 
     private void start() {
-        while (!myChat.isSucessful()) {
+        while (!myChat.isSuccessful()) {
             try {
-                myChat = (Chat) clientIn.readObject();
+                serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
+                InputStream inputStream = serverConnection.getInputStream();
+                serverIn = new ObjectInputStream(inputStream);
+                OutputStream outputStream = serverConnection.getOutputStream();
+                serverOut = new ObjectOutputStream(outputStream);
 
-                // TODO duplicated code
-                if (myChat.getUserA().equals(myChat.getUserB())) {
-                    myChat.setErrorMessage("** you can't send messages to yourself");
-                    try {
-                        clientOut.writeObject(myChat);
-                        clientOut.flush();
-                    } catch (IOException e) {
-                        System.err.println(e);
-                    }
-                    return;
-                }
-                if (dataManager.userIsRegistered(myChat.getUserB())) {
-                    myChat.setSucessful(true);
+                myChat = (Chat) clientIn.readObject();
+                if (twoPhaseCommitLogin()) {
+                    myChat.setSuccessful(true);
                     myChat.setErrorMessage("");
                     if (dataManager.chatExists(myChat)) {
                         ArrayList<Message> messages = dataManager.returnChatMessages(myChat);
@@ -76,15 +135,28 @@ public class ChatWorker extends Worker {
                         dataManager.addChat(myChat);
                     }
                 } else {
-                    myChat.setErrorMessage("** user \"" + myChat.getUserB() + "\" is not registered");
+                    myChat.setSuccessful(false);
+                    dataManager.writeLogEntry(new Date() + " - chat " + myChat.getChatId() + " not successful");
                 }
 
                 clientOut.writeObject(myChat);
                 clientOut.flush();
 
+                if (serverConnection != null) {
+                    serverConnection.close();
+                }
+
 
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println(e);
+            } finally {
+                if (serverConnection != null) {
+                    try {
+                        serverConnection.close();
+                    } catch (IOException e) {
+                        System.err.println(e);
+                    }
+                }
             }
         }
     }

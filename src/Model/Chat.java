@@ -8,8 +8,9 @@ public class Chat implements Serializable {
     private String userA;
     private String userB;
     private String errorMessage;
+    private String status;
     private ArrayList<Message> messages;
-    private boolean sucessful;
+    private boolean successful;
 
     public Chat(String userA, String userB) {
         this.userA = userA;
@@ -17,7 +18,7 @@ public class Chat implements Serializable {
         chatId = generateChatId();
         errorMessage = "";
         messages = new ArrayList<>();
-        sucessful = false;
+        successful = false;
     }
 
     public Chat(String chatId, String userA, String userB) {
@@ -26,7 +27,7 @@ public class Chat implements Serializable {
         this.userB = userB;
         errorMessage = "";
         messages = new ArrayList<>();
-        sucessful = false;
+        successful = false;
     }
 
     private String generateChatId() {
@@ -61,11 +62,19 @@ public class Chat implements Serializable {
         this.messages = messages;
     }
 
-    public boolean isSucessful() {
-        return sucessful;
+    public boolean isSuccessful() {
+        return successful;
     }
 
-    public void setSucessful(boolean sucessful) {
-        this.sucessful = sucessful;
+    public void setSuccessful(boolean successful) {
+        this.successful = successful;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }
