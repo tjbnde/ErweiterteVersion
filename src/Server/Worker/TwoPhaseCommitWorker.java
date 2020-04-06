@@ -35,7 +35,7 @@ public class TwoPhaseCommitWorker implements Runnable {
 
     @Override
     public void run() {
-        while(true) {
+        while (true) {
             try {
                 connectionToOtherServer = server.accept();
                 OutputStream outputStream = connectionToOtherServer.getOutputStream();
@@ -45,12 +45,12 @@ public class TwoPhaseCommitWorker implements Runnable {
 
 
                 Object nextElement = serverIn.readObject();
-                if(nextElement instanceof Message) {
+                if (nextElement instanceof Message) {
                     Message myMessage = (Message) nextElement;
-                    switch(myMessage.getStatus()) {
+                    switch (myMessage.getStatus()) {
                         case "PREPARE":
                             dataManager.writeLogEntry(System.currentTimeMillis() + " - testing if message " + (myMessage.getHeader().getMessageId()) + " can be committed locally");
-                            if(dataManager.messageCanBeCommited(myMessage)) {
+                            if (dataManager.messageCanBeCommited(myMessage)) {
                                 myMessage.setStatus("READY");
                                 dataManager.writeLogEntry(System.currentTimeMillis() + " - message " + (myMessage.getHeader().getMessageId()) + " can be committed locally");
                             } else {
@@ -71,33 +71,32 @@ public class TwoPhaseCommitWorker implements Runnable {
                     }
                     serverOut.writeObject(myMessage);
                     serverOut.flush();
-                } else if(nextElement instanceof Login) {
+                } else if (nextElement instanceof Login) {
                     Login myLogin = (Login) nextElement;
-                    switch (myLogin.getStatus()) {
-                        case "PREPARE":
-                            dataManager.writeLogEntry(System.currentTimeMillis() + " - testing if login of user " + myLogin.getUsername() + "is successful");
-                            if(dataManager.loginCanBeCommited(myLogin)){
-                                myLogin.setStatus("READY");
-                                dataManager.writeLogEntry(System.currentTimeMillis() + " - login of user " + myLogin.getUsername() + " can be committed locally");
-                            } else {
-                                myLogin.setStatus("ABORT");
-                                dataManager.writeLogEntry(System.currentTimeMillis() + " - login of user " + myLogin.getUsername() + " can not be committed locally");
-                            }
-                            break;
-                        case "COMMIT":
-                            dataManager.commitLogin(myLogin);
-                            myLogin.setStatus("OK");
-                            break;
-                        case "ABORT":
-                            dataManager.abortLogin(myLogin);
-                            myLogin.setStatus("OK");
-                            break;
+
+                    dataManager.writeLogEntry(System.currentTimeMillis() + " - testing if login of user " + myLogin.getUsername() + "is successful");
+                    if (dataManager.loginCanBeCommited(myLogin)) {
+                        myLogin.setStatus("READY");
+                        dataManager.writeLogEntry(System.currentTimeMillis() + " - login of user " + myLogin.getUsername() + " can be committed locally");
+                    } else {
+                        myLogin.setStatus("ABORT");
+                        dataManager.writeLogEntry(System.currentTimeMillis() + " - login of user " + myLogin.getUsername() + " can not be committed locally");
                     }
                     serverOut.writeObject(myLogin);
                     serverOut.flush();
-                }
 
-            } catch(IOException | ClassNotFoundException e) {
+
+                    myLogin = (Login) serverIn.readObject();
+                    if (myLogin.getStatus().equals("COMMIT")) {
+                        dataManager.commitLogin(myLogin);
+                    } else {
+                        dataManager.abortLogin(myLogin);
+                    }
+                    myLogin.setStatus("OK");
+                    serverOut.writeObject(myLogin);
+                    serverOut.flush();
+                }
+            } catch (IOException | ClassNotFoundException e) {
                 System.err.println(e);
             }
         }

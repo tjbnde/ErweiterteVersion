@@ -21,7 +21,6 @@ public class LoginWorker extends Worker {
         this.hostname = hostname;
     }
 
-
     private boolean twoPhaseCommitLogin() {
         dataManager.writeLogEntry(System.currentTimeMillis() + " - preparing user " + (newLogin.getUsername()) + "for committing");
         newLogin.setStatus("PREPARE");
@@ -31,6 +30,8 @@ public class LoginWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         }
+
+
         if (!dataManager.loginCanBeCommited(newLogin)) {
             newLogin.setStatus("ABORT");
             try {
@@ -41,7 +42,6 @@ public class LoginWorker extends Worker {
             }
             return false;
         }
-
         try {
             newLogin = (Login) serverIn.readObject();
             if (newLogin.getStatus().equals("READY")) {
@@ -54,11 +54,9 @@ public class LoginWorker extends Worker {
             }
             serverOut.writeObject(newLogin);
             serverOut.flush();
-
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
         }
-
         try {
             newLogin = (Login) serverIn.readObject();
             if (newLogin.getStatus().equals("OK")) {
@@ -68,7 +66,6 @@ public class LoginWorker extends Worker {
             System.err.println(e);
         }
         return false;
-
     }
 
     public void run() {
