@@ -7,6 +7,7 @@ import Server.DataManager;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Date;
 
 public class TwoPhaseCommitWorker implements Runnable {
     private Socket connectionToOtherServer;
@@ -74,13 +75,13 @@ public class TwoPhaseCommitWorker implements Runnable {
                 } else if (nextElement instanceof Login) {
                     Login myLogin = (Login) nextElement;
 
-                    dataManager.writeLogEntry(System.currentTimeMillis() + " - testing if login of user " + myLogin.getUsername() + "is successful");
+                    dataManager.writeLogEntry(new Date() + " - testing if login of user " + myLogin.getUsername() + "is successful");
                     if (dataManager.loginCanBeCommited(myLogin)) {
                         myLogin.setStatus("READY");
-                        dataManager.writeLogEntry(System.currentTimeMillis() + " - login of user " + myLogin.getUsername() + " can be committed locally");
+                        dataManager.writeLogEntry(new Date() + " - login of user " + myLogin.getUsername() + " can be committed locally");
                     } else {
                         myLogin.setStatus("ABORT");
-                        dataManager.writeLogEntry(System.currentTimeMillis() + " - login of user " + myLogin.getUsername() + " can not be committed locally");
+                        dataManager.writeLogEntry(new Date() + " - login of user " + myLogin.getUsername() + " can not be committed locally");
                     }
                     serverOut.writeObject(myLogin);
                     serverOut.flush();
@@ -89,8 +90,10 @@ public class TwoPhaseCommitWorker implements Runnable {
                     myLogin = (Login) serverIn.readObject();
                     if (myLogin.getStatus().equals("COMMIT")) {
                         dataManager.commitLogin(myLogin);
+                        dataManager.writeLogEntry(new Date() + " - login of user " + myLogin.getUsername() + " committed locally");
                     } else {
                         dataManager.abortLogin(myLogin);
+                        dataManager.writeLogEntry(new Date() + " - login of user " + myLogin.getUsername() + " aborted locally");
                     }
                     myLogin.setStatus("OK");
                     serverOut.writeObject(myLogin);

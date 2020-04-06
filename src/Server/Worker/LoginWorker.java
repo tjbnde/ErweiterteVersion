@@ -6,6 +6,7 @@ import Server.DataManager;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Date;
 
 public class LoginWorker extends Worker {
     private Login newLogin;
@@ -22,7 +23,7 @@ public class LoginWorker extends Worker {
     }
 
     private boolean twoPhaseCommitLogin() {
-        dataManager.writeLogEntry(System.currentTimeMillis() + " - preparing user " + (newLogin.getUsername()) + "for committing");
+        dataManager.writeLogEntry(new Date() + " - preparing commit of login for user " + (newLogin.getUsername()));
         newLogin.setStatus("PREPARE");
         try {
             serverOut.writeObject(newLogin);
@@ -33,6 +34,7 @@ public class LoginWorker extends Worker {
 
 
         if (!dataManager.loginCanBeCommited(newLogin)) {
+            dataManager.writeLogEntry(new Date() + " - login for user " + newLogin.getUsername() + " can not be commited - wrong username or password");
             newLogin.setStatus("ABORT");
             try {
                 serverOut.writeObject(newLogin);
@@ -46,8 +48,10 @@ public class LoginWorker extends Worker {
             newLogin = (Login) serverIn.readObject();
             if (newLogin.getStatus().equals("READY")) {
                 newLogin.setStatus("COMMIT");
+                dataManager.writeLogEntry(new Date() + " - login for user " + newLogin.getUsername() + " can be commited");
             } else {
                 newLogin.setStatus("ABORT");
+                dataManager.writeLogEntry(new Date() + " - login for user " + newLogin.getUsername() + " can not be commited");
                 serverOut.writeObject(newLogin);
                 serverOut.flush();
                 return false;
@@ -82,9 +86,11 @@ public class LoginWorker extends Worker {
         if (twoPhaseCommitLogin()) {
             newLogin.setSuccessful(true);
             newLogin.setErrorMessage("");
+            dataManager.writeLogEntry(new Date() + " - login for user " + newLogin.getUsername() + " successful");
         } else {
             newLogin.setSuccessful(false);
             newLogin.setErrorMessage("** wrong username or password");
+            dataManager.writeLogEntry(new Date() + " - login for user " + newLogin.getUsername() + " not successful");
         }
         try {
             clientOut.writeObject(newLogin);
@@ -101,5 +107,6 @@ public class LoginWorker extends Worker {
                 }
             }
         }
+
     }
 }
