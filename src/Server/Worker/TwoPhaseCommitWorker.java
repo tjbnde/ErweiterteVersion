@@ -75,7 +75,7 @@ public class TwoPhaseCommitWorker implements Runnable {
                 } else if (nextElement instanceof Login) {
                     Login myLogin = (Login) nextElement;
 
-                    dataManager.writeLogEntry(new Date() + " - testing if login of user " + myLogin.getUsername() + "is successful");
+                    dataManager.writeLogEntry(new Date() + " - testing if login of user " + myLogin.getUsername() + " is successful");
                     if (dataManager.loginCanBeCommited(myLogin)) {
                         myLogin.setStatus("READY");
                         dataManager.writeLogEntry(new Date() + " - login of user " + myLogin.getUsername() + " can be committed locally");

@@ -203,8 +203,17 @@ public class DataManager {
         return validateUser(myLogin.getUsername(), myLogin.getPassword());
     }
 
+
+    /**
+     * Schnittstelle die vom TwoPhaseCommitWorker aufgerufen wird
+     * @param myLogin Referent für Login der commited wird
+     */
     public void commitLogin(Login myLogin) {
         loggedUsers.put(myLogin.getUsername(), null);
+    }
+
+    public void loginUser(Login myLogin, ObjectOutputStream clientOut) {
+        loggedUsers.put(myLogin.getUsername(), clientOut);
     }
 
 

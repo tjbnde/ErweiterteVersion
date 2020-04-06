@@ -9,35 +9,35 @@ import java.net.Socket;
 import java.util.Date;
 
 public class LoginWorker extends Worker {
-    private Login newLogin;
+    private Login myLogin;
 
     private String hostname;
     private Socket serverConnection;
     private ObjectInputStream serverIn;
     private ObjectOutputStream serverOut;
 
-    public LoginWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Login newLogin, String hostname) {
+    public LoginWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Login myLogin, String hostname) {
         super(dataManager, clientOut, clientIn);
-        this.newLogin = newLogin;
+        this.myLogin = myLogin;
         this.hostname = hostname;
     }
 
     private boolean twoPhaseCommitLogin() {
-        dataManager.writeLogEntry(new Date() + " - preparing commit of login for user " + (newLogin.getUsername()));
-        newLogin.setStatus("PREPARE");
+        dataManager.writeLogEntry(new Date() + " - preparing commit of login for user " + (myLogin.getUsername()));
+        myLogin.setStatus("PREPARE");
         try {
-            serverOut.writeObject(newLogin);
+            serverOut.writeObject(myLogin);
             serverOut.flush();
         } catch (IOException e) {
             System.err.println(e);
         }
 
 
-        if (!dataManager.loginCanBeCommited(newLogin)) {
-            dataManager.writeLogEntry(new Date() + " - login for user " + newLogin.getUsername() + " can not be commited - wrong username or password");
-            newLogin.setStatus("ABORT");
+        if (!dataManager.loginCanBeCommited(myLogin)) {
+            dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can not be commited - wrong username or password");
+            myLogin.setStatus("ABORT");
             try {
-                serverOut.writeObject(newLogin);
+                serverOut.writeObject(myLogin);
                 serverOut.flush();
             } catch (IOException e) {
                 System.err.println(e);
@@ -45,25 +45,25 @@ public class LoginWorker extends Worker {
             return false;
         }
         try {
-            newLogin = (Login) serverIn.readObject();
-            if (newLogin.getStatus().equals("READY")) {
-                newLogin.setStatus("COMMIT");
-                dataManager.writeLogEntry(new Date() + " - login for user " + newLogin.getUsername() + " can be commited");
+            myLogin = (Login) serverIn.readObject();
+            if (myLogin.getStatus().equals("READY")) {
+                myLogin.setStatus("COMMIT");
+                dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can be commited");
             } else {
-                newLogin.setStatus("ABORT");
-                dataManager.writeLogEntry(new Date() + " - login for user " + newLogin.getUsername() + " can not be commited");
-                serverOut.writeObject(newLogin);
+                myLogin.setStatus("ABORT");
+                dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can not be commited");
+                serverOut.writeObject(myLogin);
                 serverOut.flush();
                 return false;
             }
-            serverOut.writeObject(newLogin);
+            serverOut.writeObject(myLogin);
             serverOut.flush();
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
         }
         try {
-            newLogin = (Login) serverIn.readObject();
-            if (newLogin.getStatus().equals("OK")) {
+            myLogin = (Login) serverIn.readObject();
+            if (myLogin.getStatus().equals("OK")) {
                 return true;
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -83,17 +83,20 @@ public class LoginWorker extends Worker {
             System.err.println(e);
         }
 
+
+
         if (twoPhaseCommitLogin()) {
-            newLogin.setSuccessful(true);
-            newLogin.setErrorMessage("");
-            dataManager.writeLogEntry(new Date() + " - login for user " + newLogin.getUsername() + " successful");
+            myLogin.setSuccessful(true);
+            myLogin.setErrorMessage("");
+            dataManager.loginUser(myLogin, clientOut);
+            dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " successful");
         } else {
-            newLogin.setSuccessful(false);
-            newLogin.setErrorMessage("** wrong username or password");
-            dataManager.writeLogEntry(new Date() + " - login for user " + newLogin.getUsername() + " not successful");
+            myLogin.setSuccessful(false);
+            myLogin.setErrorMessage("** wrong username or password");
+            dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " not successful");
         }
         try {
-            clientOut.writeObject(newLogin);
+            clientOut.writeObject(myLogin);
             clientOut.flush();
         } catch (IOException e) {
             System.err.println(e);
