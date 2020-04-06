@@ -49,7 +49,7 @@ public class TwoPhaseCommitWorker implements Runnable {
                 Object nextElement = serverIn.readObject();
                 if (nextElement instanceof Message) {
                     Message myMessage = (Message) nextElement;
-                    
+
                     // means that the other server doesn't know the output stream to client
                     if(myMessage.getStatus().equals("OK")) {
                         clientOut = dataManager.getChatPartnerSocket(myMessage);

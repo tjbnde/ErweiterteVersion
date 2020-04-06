@@ -96,6 +96,7 @@ public class Client {
         System.out.println("register");
         System.out.println("autoregister");
         System.out.println("exit");
+        System.out.println();
     }
 
     public void start() {
@@ -218,7 +219,6 @@ public class Client {
     }
 
     private void joinChat() {
-        startConnection();
         System.out.println("** enter username of chat partner");
         try {
             String chatPartner = userInput.readLine();
@@ -239,8 +239,6 @@ public class Client {
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
-        } finally {
-            closeConnection();
         }
     }
 
@@ -275,15 +273,13 @@ public class Client {
                 this.username = username;
                 this.password = password;
             } else {
+                closeConnection();
                 System.err.println(myLogin.getErrorMessage());
                 login();
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
-        } finally {
-            closeConnection();
         }
-
     }
 
     private void register() {
@@ -300,14 +296,13 @@ public class Client {
                 this.username = myRegister.getUsername();
                 this.password = myRegister.getPassword();
             } else {
+                closeConnection();
                 System.err.println(myRegister.getErrorMessage());
                 // call function again if it fails
                 register();
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
-        } finally {
-            closeConnection();
         }
     }
 
