@@ -222,6 +222,10 @@ public class DataManager {
         addUser(myRegister);
     }
 
+    public void commitMessage(Message myMessage) {
+        writeMessage(myMessage);
+    }
+
 
     public void loginUser(Login myLogin, ObjectOutputStream clientOut) {
         loggedUsers.put(myLogin.getUsername(), clientOut);
@@ -248,6 +252,11 @@ public class DataManager {
                 }
             }
         }
+    }
+
+    public ObjectOutputStream getChatPartnerSocket(Message myMessage) {
+        String chatPartnerUsername = myMessage.getHeader().getSendTo();
+        return loggedUsers.get(chatPartnerUsername);
     }
 
     public void addChat(Chat myChat) {

@@ -49,28 +49,36 @@ public class TwoPhaseCommitWorker implements Runnable {
                 Object nextElement = serverIn.readObject();
                 if (nextElement instanceof Message) {
                     Message myMessage = (Message) nextElement;
-                    switch (myMessage.getStatus()) {
-                        case "PREPARE":
-                            dataManager.writeLogEntry(System.currentTimeMillis() + " - testing if message " + (myMessage.getHeader().getMessageId()) + " can be committed locally");
-                            if (dataManager.messageCanBeCommited(myMessage)) {
-                                myMessage.setStatus("READY");
-                                dataManager.writeLogEntry(System.currentTimeMillis() + " - message " + (myMessage.getHeader().getMessageId()) + " can be committed locally");
-                            } else {
-                                myMessage.setStatus("ABORT");
-                                dataManager.writeLogEntry(System.currentTimeMillis() + " - message " + (myMessage.getHeader().getMessageId()) + " can not be committed locally");
-                            }
-                            break;
-                        case "COMMIT":
-                            dataManager.writeMessage(myMessage);
-                            dataManager.writeLogEntry(System.currentTimeMillis() + " - message " + (myMessage.getHeader().getMessageId()) + " committed successfully");
-                            myMessage.setStatus("OK");
-                            break;
-                        case "ABORT":
-                            dataManager.abortMessage(myMessage);
-                            dataManager.writeLogEntry(System.currentTimeMillis() + " - message " + (myMessage.getHeader().getMessageId()) + " aborted successfully");
-                            myMessage.setStatus("OK");
-                            break;
+                    
+                    // means that the other server doesn't know the output stream to client
+                    if(myMessage.getStatus().equals("OK")) {
+                        clientOut = dataManager.getChatPartnerSocket(myMessage);
+                        clientOut.writeObject(myMessage);
+                        clientOut.flush();
+                        continue;
                     }
+
+                    dataManager.writeLogEntry(new Date() + " - testing if message " + (myMessage.getHeader().getMessageId()) + " can be committed locally");
+                    if (dataManager.messageCanBeCommited(myMessage)) {
+                        myMessage.setStatus("READY");
+                        dataManager.writeLogEntry(new Date() + " - message " + (myMessage.getHeader().getMessageId()) + " can be committed locally");
+                    } else {
+                        myMessage.setStatus("ABORT");
+                        dataManager.writeLogEntry(new Date() + " - message " + (myMessage.getHeader().getMessageId()) +  " can not be committed locally");
+                    }
+                    serverOut.writeObject(myMessage);
+                    serverOut.flush();
+
+
+                    myMessage = (Message) serverIn.readObject();
+                    if (myMessage.getStatus().equals("COMMIT")) {
+                        dataManager.commitMessage(myMessage);
+                        dataManager.writeLogEntry(new Date() + " - message " + (myMessage.getHeader().getMessageId()) + " committed locally");
+                    } else {
+                        dataManager.abortMessage(myMessage);
+                        dataManager.writeLogEntry(new Date() + " - message " + (myMessage.getHeader().getMessageId()) + " aborted locally");
+                    }
+                    myMessage.setStatus("OK");
                     serverOut.writeObject(myMessage);
                     serverOut.flush();
                 } else if (nextElement instanceof Login) {

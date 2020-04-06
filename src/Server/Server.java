@@ -104,7 +104,7 @@ public class Server {
             t = new Thread(loginWorker);
         } else if (nextElement instanceof Register) {
             Register myRegister = (Register) nextElement;
-            RegisterWorker registerWorker = new RegisterWorker(dataManager, clientOut, clientIn, myRegister);
+            RegisterWorker registerWorker = new RegisterWorker(dataManager, clientOut, clientIn, myRegister, getOtherServerHostname());
             t = new Thread(registerWorker);
         } else if (nextElement instanceof Chat) {
             Chat myChat = (Chat) nextElement;
