@@ -108,7 +108,7 @@ public class Server {
             t = new Thread(registerWorker);
         } else if (nextElement instanceof Chat) {
             Chat myChat = (Chat) nextElement;
-            ChatWorker chatWorker = new ChatWorker(dataManager, clientOut, clientIn, myChat);
+            ChatWorker chatWorker = new ChatWorker(dataManager, clientOut, clientIn, myChat, getOtherServerHostname());
             t = new Thread(chatWorker);
         } else if (nextElement instanceof Message) {
             Message myMessage = (Message) nextElement;

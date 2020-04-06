@@ -219,13 +219,14 @@ public class Client {
     }
 
     private void joinChat() {
+        startConnection();
         System.out.println("** enter username of chat partner");
         try {
             String chatPartner = userInput.readLine();
             chat = new Chat(username, chatPartner);
             serverOut.writeObject(chat);
             chat = (Chat) serverIn.readObject();
-            if (chat.isSucessful()) {
+            if (chat.isSuccessful()) {
                 System.out.println("** chat successfully joined");
                 Iterator<Message> i = chat.getMessages().iterator();
                 while (i.hasNext()) {
@@ -239,6 +240,8 @@ public class Client {
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
+        } finally {
+            closeConnection();
         }
     }
 
@@ -273,12 +276,13 @@ public class Client {
                 this.username = username;
                 this.password = password;
             } else {
-                closeConnection();
                 System.err.println(myLogin.getErrorMessage());
                 login();
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
+        } finally {
+            closeConnection();
         }
     }
 
@@ -296,13 +300,14 @@ public class Client {
                 this.username = myRegister.getUsername();
                 this.password = myRegister.getPassword();
             } else {
-                closeConnection();
                 System.err.println(myRegister.getErrorMessage());
                 // call function again if it fails
                 register();
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
+        } finally {
+            closeConnection();
         }
     }
 

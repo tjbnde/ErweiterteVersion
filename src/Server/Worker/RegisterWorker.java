@@ -84,28 +84,25 @@ public class RegisterWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         }
-
-
         if (twoPhaseCommitLogin()) {
             dataManager.addUser(myRegister);
             myRegister.setSuccessful(true);
             myRegister.setErrorMessage("");
-            dataManager.loginUser(myRegister.getUsername(), clientOut);
+            dataManager.loginUser(myRegister.getUsername(), null);
             dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " successful");
         } else {
             myRegister.setSuccessful(false);
             myRegister.setErrorMessage("** username is already taken");
             dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " not successful");
         }
+
         try {
             clientOut.writeObject(myRegister);
             clientOut.flush();
         } catch (IOException e) {
             System.err.println(e);
         } finally {
-            if(!myRegister.isSuccessful()) {
-                closeConnection();
-            }
+            closeConnection();
             if (serverConnection != null) {
                 try {
                     serverConnection.close();

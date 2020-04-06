@@ -131,6 +131,7 @@ public class MessageWorker extends Worker {
 
 
             if (twoPhaseCommitMessage()) {
+                dataManager.loginUser(myMessage.getHeader().getSendFrom(), clientOut);
                 dataManager.writeMessage(myMessage);
                 clientTo = dataManager.getChatPartnerSocket(myMessage);
                 if (clientTo != null) {

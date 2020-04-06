@@ -2,7 +2,6 @@ package Server.Worker;
 
 import Model.Chat;
 import Model.Message;
-import Model.Register;
 import Server.DataManager;
 
 import java.io.*;
@@ -22,6 +21,7 @@ public class ChatWorker extends Worker {
     public ChatWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Chat myChat, String hostname) {
         super(dataManager, clientOut, clientIn);
         this.myChat = myChat;
+        this.hostname = hostname;
     }
 
     private boolean twoPhaseCommitLogin() {
@@ -98,64 +98,19 @@ public class ChatWorker extends Worker {
             myChat.setSuccessful(false);
             dataManager.writeLogEntry(new Date() + " - chat " + myChat.getChatId() + " not successful");
         }
+
         try {
             clientOut.writeObject(myChat);
             clientOut.flush();
         } catch (IOException e) {
             System.err.println(e);
         } finally {
+            closeConnection();
             if (serverConnection != null) {
                 try {
                     serverConnection.close();
                 } catch (IOException e) {
                     System.err.println(e);
-                }
-            }
-        }
-        start();
-    }
-
-    private void start() {
-        while (!myChat.isSuccessful()) {
-            try {
-                serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
-                InputStream inputStream = serverConnection.getInputStream();
-                serverIn = new ObjectInputStream(inputStream);
-                OutputStream outputStream = serverConnection.getOutputStream();
-                serverOut = new ObjectOutputStream(outputStream);
-
-                myChat = (Chat) clientIn.readObject();
-                if (twoPhaseCommitLogin()) {
-                    myChat.setSuccessful(true);
-                    myChat.setErrorMessage("");
-                    if (dataManager.chatExists(myChat)) {
-                        ArrayList<Message> messages = dataManager.returnChatMessages(myChat);
-                        myChat.setMessages(messages);
-                    } else {
-                        dataManager.addChat(myChat);
-                    }
-                } else {
-                    myChat.setSuccessful(false);
-                    dataManager.writeLogEntry(new Date() + " - chat " + myChat.getChatId() + " not successful");
-                }
-
-                clientOut.writeObject(myChat);
-                clientOut.flush();
-
-                if (serverConnection != null) {
-                    serverConnection.close();
-                }
-
-
-            } catch (IOException | ClassNotFoundException e) {
-                System.err.println(e);
-            } finally {
-                if (serverConnection != null) {
-                    try {
-                        serverConnection.close();
-                    } catch (IOException e) {
-                        System.err.println(e);
-                    }
                 }
             }
         }

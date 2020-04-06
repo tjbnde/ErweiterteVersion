@@ -83,12 +83,10 @@ public class LoginWorker extends Worker {
             System.err.println(e);
         }
 
-
-
         if (twoPhaseCommitLogin()) {
             myLogin.setSuccessful(true);
             myLogin.setErrorMessage("");
-            dataManager.loginUser(myLogin, clientOut);
+            dataManager.loginUser(myLogin, null);
             dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " successful");
         } else {
             myLogin.setSuccessful(false);
@@ -101,9 +99,7 @@ public class LoginWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         } finally {
-            if(!myLogin.isSuccessful()) {
-                closeConnection();
-            }
+            closeConnection();
             if (serverConnection != null) {
                 try {
                     serverConnection.close();
