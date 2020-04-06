@@ -101,7 +101,9 @@ public class LoginWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         } finally {
-            closeConnection();
+            if(!myLogin.isSuccessful()) {
+                closeConnection();
+            }
             if (serverConnection != null) {
                 try {
                     serverConnection.close();

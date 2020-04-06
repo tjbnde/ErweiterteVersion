@@ -2,6 +2,7 @@ package Server.Worker;
 
 import Model.Login;
 import Model.Message;
+import Model.Register;
 import Server.DataManager;
 
 import java.io.*;
@@ -97,6 +98,33 @@ public class TwoPhaseCommitWorker implements Runnable {
                     }
                     myLogin.setStatus("OK");
                     serverOut.writeObject(myLogin);
+                    serverOut.flush();
+                } else if (nextElement instanceof Register) {
+                    Register myRegister = (Register) nextElement;
+
+                    // TODO id erstellen für register / login
+                    dataManager.writeLogEntry(new Date() + " - testing if register of user " + myRegister.getUsername() + " is successful");
+                    if (dataManager.registerCanBeCommited(myRegister)) {
+                        myRegister.setStatus("READY");
+                        dataManager.writeLogEntry(new Date() + " - register of user " + myRegister.getUsername() + " can be committed locally");
+                    } else {
+                        myRegister.setStatus("ABORT");
+                        dataManager.writeLogEntry(new Date() + " - register of user " + myRegister.getUsername() + " can not be committed locally");
+                    }
+                    serverOut.writeObject(myRegister);
+                    serverOut.flush();
+
+
+                    myRegister = (Register) serverIn.readObject();
+                    if (myRegister.getStatus().equals("COMMIT")) {
+                        dataManager.commitRegister(myRegister);
+                        dataManager.writeLogEntry(new Date() + " - register of user " + myRegister.getUsername() + " committed locally");
+                    } else {
+                        dataManager.abortRegister(myRegister);
+                        dataManager.writeLogEntry(new Date() + " - register of user " + myRegister.getUsername() + " aborted locally");
+                    }
+                    myRegister.setStatus("OK");
+                    serverOut.writeObject(myRegister);
                     serverOut.flush();
                 }
             } catch (IOException | ClassNotFoundException e) {

@@ -6,6 +6,7 @@ public class Register implements Serializable {
     private String username;
     private String password;
     private String errorMessage;
+    private String status;
     private boolean successful;
 
     public Register(String username, String password) {
@@ -13,6 +14,15 @@ public class Register implements Serializable {
         this.username = username;
         errorMessage = "";
         successful = false;
+        status = "";
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public boolean isSuccessful() {

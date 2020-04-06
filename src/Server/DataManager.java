@@ -109,6 +109,10 @@ public class DataManager {
         // TODO
     }
 
+    public void abortRegister(Register myRegister) {
+        // TODO
+    }
+
     private void readChats() {
         try {
             Scanner chatFileReader = new Scanner(chatFile);
@@ -155,9 +159,6 @@ public class DataManager {
         return registeredUsers.containsKey(username);
     }
 
-    public boolean usernameIsAvailable(String username) {
-        return !registeredUsers.containsKey(username);
-    }
 
     public boolean chatExists(Chat myChat) {
         String userA = myChat.getUserA();
@@ -203,6 +204,10 @@ public class DataManager {
         return validateUser(myLogin.getUsername(), myLogin.getPassword());
     }
 
+    public boolean registerCanBeCommited(Register myRegister) {
+        return !registeredUsers.containsKey(myRegister.getUsername());
+    }
+
 
     /**
      * Schnittstelle die vom TwoPhaseCommitWorker aufgerufen wird
@@ -211,6 +216,12 @@ public class DataManager {
     public void commitLogin(Login myLogin) {
         loggedUsers.put(myLogin.getUsername(), null);
     }
+
+    public void commitRegister(Register myRegister) {
+        loggedUsers.put(myRegister.getUsername(), null);
+        addUser(myRegister);
+    }
+
 
     public void loginUser(Login myLogin, ObjectOutputStream clientOut) {
         loggedUsers.put(myLogin.getUsername(), clientOut);
