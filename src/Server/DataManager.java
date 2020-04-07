@@ -303,9 +303,7 @@ public class DataManager {
     }
 
     public void loginUser(String username, ObjectOutputStream clientOut) {
-        if(!loggedUsers.containsKey(username)) {
-            loggedUsers.put(username, clientOut);
-        }
+        loggedUsers.put(username, clientOut);
     }
 
 
