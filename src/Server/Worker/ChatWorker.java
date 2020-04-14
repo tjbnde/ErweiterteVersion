@@ -13,18 +13,13 @@ import java.util.Date;
 public class ChatWorker extends Worker {
     Chat myChat;
 
-    private String hostname;
-    private Socket serverConnection;
-    private ObjectInputStream serverIn;
-    private ObjectOutputStream serverOut;
-
     public ChatWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Chat myChat, String hostname) {
         super(dataManager, clientOut, clientIn);
         this.myChat = myChat;
         this.hostname = hostname;
     }
 
-    private boolean twoPhaseCommitLogin() {
+    private boolean twoPhaseCommitChat() {
         dataManager.writeLogEntry(new Date() + " - preparing commit for chat " + (myChat.getChatId()));
         myChat.setStatus("PREPARE");
         try {
@@ -85,7 +80,7 @@ public class ChatWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         }
-        if (twoPhaseCommitLogin()) {
+        if (twoPhaseCommitChat()) {
             myChat.setSuccessful(true);
             myChat.setErrorMessage("");
             if (dataManager.chatExists(myChat)) {

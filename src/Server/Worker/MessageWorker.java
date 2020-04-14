@@ -13,18 +13,10 @@ public class MessageWorker extends Worker {
     private Message myMessage;
     private ObjectOutputStream clientTo;
 
-
-    private String hostname;
-    private Socket serverConnection;
-    private ObjectInputStream serverIn;
-    private ObjectOutputStream serverOut;
-
     public MessageWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Message myMessage, String hostname) {
         super(dataManager, clientOut, clientIn);
         this.myMessage = myMessage;
         this.hostname = hostname;
-        serverIn = null;
-        serverOut = null;
     }
 
 

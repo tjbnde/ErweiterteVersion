@@ -13,6 +13,7 @@ public class Client {
     // adresses of server
     private String[] serverHostname;
 
+    // port of server
     private int communicationPort;
 
     // connection to server and streams
@@ -37,8 +38,6 @@ public class Client {
     // counter for lamport
     private int globalLamportCounter;
 
-    private Properties properties;
-
     public Client() {
         username = "";
         password = "";
@@ -57,7 +56,7 @@ public class Client {
         responsiveServerPort = 0;
         responsiveServerHostname = "";
         globalLamportCounter = 0;
-        properties = new Properties();
+        Properties properties = new Properties();
         try {
             FileInputStream propertiesInputStream = new FileInputStream("config.properties") ;
             properties.load(propertiesInputStream);
@@ -68,6 +67,22 @@ public class Client {
         communicationPort = Integer.parseInt(properties.getProperty("communicationPort"));
     }
 
+    /**
+     * Startet das Client-Programm
+     */
+    public void start() {
+        enterSystem();
+        joinChat();
+        chatLoop();
+    }
+
+    /**
+     * Führt abhängig vom User verschiedene Methoden aus
+     * @see #getUserCommand()
+     * @see #login()
+     * @see #register()
+     * @see #printInfo()
+     */
     private void enterSystem() {
         String userCommand = getUserCommand();
         switch (userCommand) {
@@ -89,33 +104,43 @@ public class Client {
         }
     }
 
-    private void printInfo() {
-        System.out.println("** printing a list of all commands");
-        System.out.println("** enter [command]-help to get infos for a specific command");
-        System.out.println("login");
-        System.out.println("register");
-        System.out.println("autoregister");
-        System.out.println("exit");
-        System.out.println();
-    }
-
-    public void start() {
-        enterSystem();
-        joinChat();
-        chatLoop();
-    }
-
-    private void closeConnection() {
+    /**
+     * User gibt username vom Chat Partner ein und sendet dies an den Server
+     * Server antwortet ob dem Chat erfolgreich betreten wurde
+     * Im Fehlerfall wird die Methode erneut aufgerufen
+     */
+    private void joinChat() {
+        startConnection();
+        System.out.println("** enter username of chat partner");
         try {
-            if (connection != null) {
-                connection.close();
+            String chatPartner = userInput.readLine();
+            chat = new Chat(username, chatPartner);
+            serverOut.writeObject(chat);
+            chat = (Chat) serverIn.readObject();
+            if (chat.isSuccessful()) {
+                System.out.println("** chat successfully joined");
+                Iterator<Message> i = chat.getMessages().iterator();
+                while (i.hasNext()) {
+                    Message myMessage = i.next();
+                    System.out.println(myMessage.getHeader().getSendFrom() + ": ");
+                    System.out.println(myMessage.getText());
+                }
+            } else {
+                System.err.println(chat.getErrorMessage());
+                joinChat();
             }
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
+        } finally {
+            closeConnection();
         }
     }
 
-
+    /**
+     * Endlos Schleife in der Nachrichten geschrieben werden können, welche zum Server geschickt werden
+     * Startet einen MessageReaderWorker der permanent Nachrichten liest
+     * @see MessageReaderWorker
+     */
     private void chatLoop() {
         startConnection();
         MessageReaderWorker readerWorker = new MessageReaderWorker(serverIn);
@@ -145,64 +170,9 @@ public class Client {
         }
     }
 
-    private void logoutDialog() {
-        System.out.println("** going to logout - proceed? (y/n)");
-        try {
-            String userAnswer = userInput.readLine();
-            if (userAnswer.equals("y")) {
-                logout();
-            } else if (userAnswer.equals("n")){
-                System.out.println("** logout quited");
-            } else {
-                logoutDialog();
-            }
-        } catch (IOException e) {
-            System.err.println(e);
-        }
-    }
-
-    private void logout() {
-        username = "";
-        password = "";
-        chat = null;
-        globalLamportCounter = 0;
-        responsiveServerHostname = "";
-        responsiveServerPort = 0;
-        closeConnection();
-    }
-
-    private void startConnection() {
-        // contact a random sevrer
-        responsiveServerHostname = returnRandomServerHostname();
-
-        try {
-            // connection to responsive server
-            connection = new Socket(InetAddress.getByName(responsiveServerHostname), communicationPort);
-            OutputStream outputStream = connection.getOutputStream();
-            serverOut = new ObjectOutputStream(outputStream);
-            InputStream inputStream = connection.getInputStream();
-            serverIn = new ObjectInputStream(inputStream);
-        } catch (IOException e) {
-            System.err.println(e);
-        }
-    }
-
-    private String usernameInput() {
-        String username = "";
-        System.out.println("> enter your username");
-        try {
-            username = userInput.readLine();
-        } catch (IOException e) {
-            System.err.println(e);
-        }
-        return username;
-    }
-
-    private boolean userCommandIsValid(String userCommand) {
-        userCommand = userCommand.toLowerCase();
-        return userCommand.equals("exit") || userCommand.equals("login") || userCommand.equals("register") || userCommand.equals("info");
-    }
-
+    /**
+     * @return eingegebner Befehl
+     */
     private String getUserCommand() {
         System.out.println("enter command [”info” for a list of all commands]");
         String userCommand = "";
@@ -218,38 +188,12 @@ public class Client {
         return userCommand;
     }
 
-    private void joinChat() {
-        startConnection();
-        System.out.println("** enter username of chat partner");
-        try {
-            String chatPartner = userInput.readLine();
-            chat = new Chat(username, chatPartner);
-            serverOut.writeObject(chat);
-            chat = (Chat) serverIn.readObject();
-            if (chat.isSuccessful()) {
-                System.out.println("** chat successfully joined");
-                Iterator<Message> i = chat.getMessages().iterator();
-                while (i.hasNext()) {
-                    Message myMessage = i.next();
-                    System.out.println(myMessage.getHeader().getSendFrom() + ": ");
-                    System.out.println(myMessage.getText());
-                }
-            } else {
-                System.err.println(chat.getErrorMessage());
-                joinChat();
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println(e);
-        } finally {
-            closeConnection();
-        }
-    }
-
-
-    private boolean isLoggedIn() {
-        return !username.isEmpty() && !password.isEmpty();
-    }
-
+    /**
+     * User gibt Benutzername und Passwort ein und sendet dies an den Server
+     * Server antwortet ob der Login erfolgreich war
+     * Im Fehlerfall wird die Methode erneut aufgerufen
+     * @see #usernameInput()
+     */
     private void login() {
         startConnection();
 
@@ -286,6 +230,13 @@ public class Client {
         }
     }
 
+    /**
+     * User legt einen Benutzernamen und ein Passwort fest und sendet dies an den Server
+     * Server antwortet ob die Registrierung erfolgreich war
+     * Im Fehlerfall wird die Methode erneut aufgerufen
+     * @see #usernameInput()
+     * @see #passwordInput()
+     */
     private void register() {
         startConnection();
         username = usernameInput();
@@ -311,6 +262,121 @@ public class Client {
         }
     }
 
+
+    /**
+     * Gibt eine Liste aller möglichen Befehle auf der Konsole aus
+     */
+    private void printInfo() {
+        System.out.println("** printing a list of all commands");
+        System.out.println("** enter [command]-help to get infos for a specific command");
+        System.out.println("login");
+        System.out.println("register");
+        System.out.println("autoregister");
+        System.out.println("exit");
+        System.out.println();
+    }
+
+    /**
+     * Startet eine Verbindung mit einem zufälligen Server und startet die zugehörigen Streams
+     */
+    private void startConnection() {
+        // contact a random server
+        responsiveServerHostname = returnRandomServerHostname();
+
+        try {
+            // connection to responsive server
+            connection = new Socket(InetAddress.getByName(responsiveServerHostname), communicationPort);
+            OutputStream outputStream = connection.getOutputStream();
+            serverOut = new ObjectOutputStream(outputStream);
+            InputStream inputStream = connection.getInputStream();
+            serverIn = new ObjectInputStream(inputStream);
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+
+
+    /**
+     * Schließt die bestehnde Verbindung, wenn sie vorhanden ist
+     */
+    private void closeConnection() {
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+
+
+    /**
+     * User kann entscheiden ob er mit dem Logout fortfahren will
+     */
+    private void logoutDialog() {
+        System.out.println("** going to logout - proceed? (y/n)");
+        try {
+            String userAnswer = userInput.readLine();
+            while(!userAnswer.equals("y") | !userAnswer.equals("n")) {
+                userAnswer = userInput.readLine();
+            }
+            if (userAnswer.equals("y")) {
+                logout();
+            } else {
+                System.out.println("** logout quited");
+            }
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+
+    /**
+     * sämtliche Attribute werden zurückgesetzt
+     */
+    private void logout() {
+        username = "";
+        password = "";
+        chat = null;
+        globalLamportCounter = 0;
+        responsiveServerHostname = "";
+        responsiveServerPort = 0;
+        closeConnection();
+    }
+
+
+    /**
+     *
+     * @return eingebener Benutername
+     */
+    private String usernameInput() {
+        String username = "";
+        System.out.println("> enter your username");
+        try {
+            username = userInput.readLine();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+        return username;
+    }
+
+    /**
+     * @param userCommand zu prüfender Befehl
+     * @return Wahrheitswert, ob der Befehl existiert
+     */
+    private boolean userCommandIsValid(String userCommand) {
+        userCommand = userCommand.toLowerCase();
+        return userCommand.equals("exit") || userCommand.equals("login") || userCommand.equals("register") || userCommand.equals("info");
+    }
+
+    private boolean isLoggedIn() {
+        return !username.isEmpty() && !password.isEmpty();
+    }
+
+
+    /**
+     * User gibt solange ein Passwort wiederholt ein, bis es übereinstimmt
+     * @return erstelltes Passwort
+     */
     private String passwordInput() {
         String password = "";
         String passwordRepeat = "";
@@ -337,6 +403,19 @@ public class Client {
         return password;
     }
 
+    /**
+     * Entscheidet per Zufall welcher Server angesprochen wird
+     * @return IP-Adressse des verarbeitenden Servers
+     */
+    private String returnRandomServerHostname() {
+        double random = Math.random();
+        if (random < 0.5) {
+            return serverHostname[0];
+        } else {
+            return serverHostname[1];
+        }
+    }
+
     public String getUsername() {
         return username;
     }
@@ -359,14 +438,5 @@ public class Client {
 
     public void setChat(Chat chat) {
         this.chat = chat;
-    }
-
-    private String returnRandomServerHostname() {
-        double random = Math.random();
-        if (random < 0.5) {
-            return serverHostname[0];
-        } else {
-            return serverHostname[1];
-        }
     }
 }

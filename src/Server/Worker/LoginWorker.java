@@ -11,11 +11,6 @@ import java.util.Date;
 public class LoginWorker extends Worker {
     private Login myLogin;
 
-    private String hostname;
-    private Socket serverConnection;
-    private ObjectInputStream serverIn;
-    private ObjectOutputStream serverOut;
-
     public LoginWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Login myLogin, String hostname) {
         super(dataManager, clientOut, clientIn);
         this.myLogin = myLogin;
@@ -31,7 +26,6 @@ public class LoginWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         }
-
 
         if (!dataManager.loginCanBeCommited(myLogin)) {
             dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can not be commited - wrong username or password");

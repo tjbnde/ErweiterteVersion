@@ -4,21 +4,17 @@ import Model.*;
 import Server.Worker.*;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Server {
-    // id for identifaction between servers
+    // id for identification between servers
     private int id;
 
     // hostname and port for own socket
     private String hostname;
     private int port;
 
-    /**
-     * Test
-     */
     private ServerSocket server;
 
     private DataManager dataManager;
@@ -28,8 +24,7 @@ public class Server {
     private ObjectInputStream clientIn;
     private ObjectOutputStream clientOut;
 
-    // hostname and ports to get connection to other server
-    private int[] serverPorts;
+    // hostnames of server
     private String[] hostnames;
 
     // connection to other server for Two-Phase-Commit Protocol

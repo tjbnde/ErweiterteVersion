@@ -11,19 +11,13 @@ import java.util.Date;
 public class RegisterWorker extends Worker {
     private Register myRegister;
 
-    private String hostname;
-    private Socket serverConnection;
-    private ObjectInputStream serverIn;
-    private ObjectOutputStream serverOut;
-
     public RegisterWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Register myRegister, String hostname) {
         super(dataManager, clientOut, clientIn);
         this.myRegister = myRegister;
         this.hostname = hostname;
     }
 
-
-    private boolean twoPhaseCommitLogin() {
+    private boolean twoPhaseCommitRegister() {
         dataManager.writeLogEntry(new Date() + " - preparing commit of register for user " + (myRegister.getUsername()));
         myRegister.setStatus("PREPARE");
         try {
@@ -84,7 +78,7 @@ public class RegisterWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         }
-        if (twoPhaseCommitLogin()) {
+        if (twoPhaseCommitRegister()) {
             dataManager.addUser(myRegister);
             myRegister.setSuccessful(true);
             myRegister.setErrorMessage("");
