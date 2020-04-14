@@ -6,7 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-public class Server2 {
+public class ServerMain_2 {
     public static void main(String[] args) {
         Properties properties = new Properties();
         try {

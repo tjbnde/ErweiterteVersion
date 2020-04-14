@@ -24,6 +24,10 @@ public class Message implements Serializable, Comparable {
         status = "";
     }
 
+    /**
+     * Methode um das Objekt in einen String zu verwandeln um die Daten anschließend in eine Datei zu schreiben
+     */
+    @Override
     public String toString(){
         String messageToString = "";
         messageToString += header.getMessageId() + "#%#";
@@ -35,6 +39,13 @@ public class Message implements Serializable, Comparable {
         messageToString += text;
         return messageToString;
     }
+
+    @Override
+    public int compareTo(Object vMessage) {
+        return this.getHeader().getLocalLamportCounter() - ((Message) vMessage).getHeader().getLocalLamportCounter();
+    }
+
+    // Getter & Setter
 
     public String getStatus() {
         return status;
@@ -48,20 +59,9 @@ public class Message implements Serializable, Comparable {
         return header;
     }
 
-    public void setHeader(MessageHeader header) {
-        this.header = header;
-    }
-
     public String getText() {
         return text;
     }
 
-    public void setText(String text) {
-        this.text = text;
-    }
 
-    @Override
-    public int compareTo(Object vMessage) {
-        return this.getHeader().getLocalLamportCounter() - ((Message) vMessage).getHeader().getLocalLamportCounter();
-    }
 }

@@ -12,8 +12,6 @@ public class Login implements Serializable {
 
     private String status;
 
-
-
     public Login(String username, String password) {
         this.username = username;
         this.password = password
@@ -27,6 +25,8 @@ public class Login implements Serializable {
         return status;
     }
 
+    // Getter & Setter
+
     public void setStatus(String status) {
         this.status = status;
     }
@@ -35,16 +35,8 @@ public class Login implements Serializable {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getPassword() {
         return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public boolean isSuccessful() {

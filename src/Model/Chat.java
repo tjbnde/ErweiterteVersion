@@ -3,6 +3,11 @@ package Model;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+/**
+ * Model Klasse Chat
+ * Implementiert Serializable damit Instanzen dieser Klasse
+ * über ObjectInputStream & ObjectOutputStream versendet und gelesen werden können
+ */
 public class Chat implements Serializable {
     private String chatId;
     private String userA;
@@ -30,9 +35,13 @@ public class Chat implements Serializable {
         successful = false;
     }
 
+    // generates unique chatId, as every username is unique
     private String generateChatId() {
         return userA + userB;
     }
+
+
+    // Getter & Setter
 
     public String getChatId() {
         return chatId.toString();
