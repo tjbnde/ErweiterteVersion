@@ -93,21 +93,22 @@ public class Server {
 
     private Thread processElement(Object nextElement) {
         Thread t = null;
+        String hostname = getOtherServerHostname();
         if (nextElement instanceof Login) {
             Login myLogin = (Login) nextElement;
-            LoginWorker loginWorker = new LoginWorker(dataManager, clientOut, clientIn, myLogin, getOtherServerHostname());
+            LoginWorker loginWorker = new LoginWorker(dataManager, clientOut, clientIn, hostname, myLogin);
             t = new Thread(loginWorker);
         } else if (nextElement instanceof Register) {
             Register myRegister = (Register) nextElement;
-            RegisterWorker registerWorker = new RegisterWorker(dataManager, clientOut, clientIn, myRegister, getOtherServerHostname());
+            RegisterWorker registerWorker = new RegisterWorker(dataManager, clientOut, clientIn, hostname, myRegister);
             t = new Thread(registerWorker);
         } else if (nextElement instanceof Chat) {
             Chat myChat = (Chat) nextElement;
-            ChatWorker chatWorker = new ChatWorker(dataManager, clientOut, clientIn, myChat, getOtherServerHostname());
+            ChatWorker chatWorker = new ChatWorker(dataManager, clientOut, clientIn, hostname, myChat);
             t = new Thread(chatWorker);
         } else if (nextElement instanceof Message) {
             Message myMessage = (Message) nextElement;
-            MessageWorker messageWorker = new MessageWorker(dataManager, clientOut, clientIn, myMessage, getOtherServerHostname());
+            MessageWorker messageWorker = new MessageWorker(dataManager, clientOut, clientIn, hostname, myMessage);
             t = new Thread(messageWorker);
         }
         return t;

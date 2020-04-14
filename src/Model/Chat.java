@@ -9,11 +9,20 @@ import java.util.ArrayList;
  * über ObjectInputStream & ObjectOutputStream versendet und gelesen werden können
  */
 public class Chat implements Serializable {
+    // unique chat id
     private String chatId;
+
+    // username of first user
     private String userA;
+
+    // username of second user
     private String userB;
     private String errorMessage;
+
+    // status for two phase commit protocol
     private String status;
+
+    // messages of the chat
     private ArrayList<Message> messages;
     private boolean successful;
 

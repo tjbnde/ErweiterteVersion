@@ -4,148 +4,150 @@ import Model.Message;
 import Server.DataManager;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.util.Date;
 
 public class MessageWorker extends Worker {
-
     private Message myMessage;
-    private ObjectOutputStream clientTo;
 
-    public MessageWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Message myMessage, String hostname) {
-        super(dataManager, clientOut, clientIn);
+    public MessageWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname, Message myMessage) {
+        super(dataManager, clientOut, clientIn, hostname);
         this.myMessage = myMessage;
-        this.hostname = hostname;
+    }
+
+    /**
+     * Startpunkt des Threads
+     * Loggt einen User mit einem zugehörigen Output Stream ein
+     * Sendet eine Nachricht an den bestimmten Empfänger
+     * Springt in eine Endlos Schleife
+     *
+     * @see Server.DataManager#loginUser(String, ObjectOutputStream)
+     * @see #chatLoop()
+     */
+    public void run() {
+        dataManager.loginUser(myMessage.getHeader().getSendFrom(), clientOut);
+
+        sendMessage();
+
+        chatLoop();
     }
 
 
+    /**
+     * Prüft ob die Nachricht erfolgreich versendet werden kann mit Hilfe des "Two Phase Commit" Protokolls
+     *
+     * @return Wahrheitswert ob die Nachricht erfolgreich versendet werden kann
+     * @see Worker#openServerConnection()
+     * @see Server.DataManager#writeLogEntry(String)
+     * @see #sendMessageToOtherServer()
+     * @see Server.DataManager#messageCanBeCommited(Message)
+     * @see Worker#closeServerConnection()
+     * @see #readMessageFromOtherServer()
+     */
     private boolean twoPhaseCommitMessage() {
+        openServerConnection();
+
         dataManager.writeLogEntry(new Date() + " - preparing message " + (myMessage.getHeader().getMessageId()) + "for committing");
         myMessage.setStatus("PREPARE");
-        try {
-            serverOut.writeObject(myMessage);
-            serverOut.flush();
-        } catch (IOException e) {
-            System.err.println(e);
-        }
 
+        sendMessageToOtherServer();
 
         if (!dataManager.messageCanBeCommited(myMessage)) {
-            dataManager.writeLogEntry(new Date() + " - message " + myMessage.getHeader().getMessageId() + " can not be committed ");
+            dataManager.writeLogEntry(new Date() + " - message " + myMessage.getHeader().getMessageId() + " can not be committed");
             myMessage.setStatus("ABORT");
-            try {
-                serverOut.writeObject(myMessage);
-                serverOut.flush();
-            } catch (IOException e) {
-                System.err.println(e);
-            }
+            sendMessageToOtherServer();
+            closeServerConnection();
             return false;
         }
 
+        readMessageFromOtherServer();
 
-        try {
-            myMessage = (Message) serverIn.readObject();
-            if (myMessage.getStatus().equals("READY")) {
-                dataManager.writeLogEntry(new Date() + " - set message " + (myMessage.getHeader().getMessageId()) + "ready for committing");
-                myMessage.setStatus("COMMIT");
-            } else {
-                dataManager.writeLogEntry(new Date() + " - set message " + (myMessage.getHeader().getMessageId()) + "ready for aborting");
-                myMessage.setStatus("ABORT");
-                serverOut.writeObject(myMessage);
-                serverOut.flush();
-                return false;
-            }
-            serverOut.writeObject(myMessage);
-            serverOut.flush();
-
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println(e);
+        if(myMessage.getStatus().equals("ABORT")) {
+            dataManager.writeLogEntry(new Date() + " - set message " + (myMessage.getHeader().getMessageId()) + "ready for aborting");
+            sendMessageToOtherServer();
+            closeServerConnection();
+            return false;
         }
 
-        try {
-            myMessage = (Message) serverIn.readObject();
-            if (myMessage.getStatus().equals("OK")) {
-                return true;
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println(e);
+        if (myMessage.getStatus().equals("READY")) {
+            dataManager.writeLogEntry(new Date() + " - set message " + (myMessage.getHeader().getMessageId()) + "ready for committing");
+            myMessage.setStatus("COMMIT");
         }
-        return false;
+
+        sendMessageToOtherServer();
+
+        readMessageFromOtherServer();
+
+        closeServerConnection();
+
+        return myMessage.getStatus().equals("OK");
     }
 
 
+    /**
+     * Endlos Schleife
+     * Eintreffende Nachrichten werden gelesen
+     * Diese Nachrichten werden verarbeitet
+     *
+     * @see #sendMessage()
+     */
     private void chatLoop() {
         while (true) {
             try {
                 myMessage = (Message) clientIn.readObject();
-
-                // connection to other server for Two-Phase-Commit  Protocol
-                serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
-                InputStream inputStream = serverConnection.getInputStream();
-                serverIn = new ObjectInputStream(inputStream);
-                OutputStream outputStream = serverConnection.getOutputStream();
-                serverOut = new ObjectOutputStream(outputStream);
-
-                if (twoPhaseCommitMessage()) {
-                    dataManager.writeMessage(myMessage);
-                    clientTo = dataManager.getChatPartnerSocket(myMessage);
-                    if (clientTo != null) {
-                        clientTo.writeObject(myMessage);
-                        clientTo.flush();
-                    } else {
-                        serverOut.writeObject(myMessage);
-                        serverOut.flush();
-                    }
-                }
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println(e);
-            } finally {
-                if (serverConnection != null) {
-                    try {
-                        serverConnection.close();
-                    } catch (IOException e) {
-                        System.err.println(e);
-                    }
+            }
+            sendMessage();
+        }
+    }
+
+    /**
+     * Sendet eine Nachricht an den bestimmten Empfänger
+     * Leitet sie an den anderen Server weiter wenn kein entsprechender Output Stream vorhanden ist
+     *
+     * @see Server.DataManager#writeMessage(Message)
+     * @see Server.DataManager#getChatPartnerSocket(Message)
+     * @see #sendMessageToOtherServer()
+     */
+    private void sendMessage() {
+        if (twoPhaseCommitMessage()) {
+            dataManager.writeMessage(myMessage);
+            ObjectOutputStream clientTo = dataManager.getChatPartnerSocket(myMessage);
+            if (clientTo != null) {
+                try {
+                    clientTo.writeObject(myMessage);
+                    clientTo.flush();
+                } catch (IOException e) {
+                    System.err.println(e);
                 }
+            } else {
+                sendMessageToOtherServer();
             }
         }
     }
 
-    public void run() {
+
+    /**
+     * Liest eine Nachricht vom anderen Server
+     */
+    private void readMessageFromOtherServer() {
         try {
-            // connection to other server for Two-Phase-Commit  Protocol
-            serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
-            InputStream inputStream = serverConnection.getInputStream();
-            serverIn = new ObjectInputStream(inputStream);
-            OutputStream outputStream = serverConnection.getOutputStream();
-            serverOut = new ObjectOutputStream(outputStream);
+            myMessage = (Message) serverIn.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println(e);
+        }
+    }
 
-
-            if (twoPhaseCommitMessage()) {
-                dataManager.loginUser(myMessage.getHeader().getSendFrom(), clientOut);
-                dataManager.writeMessage(myMessage);
-                clientTo = dataManager.getChatPartnerSocket(myMessage);
-                if (clientTo != null) {
-                    clientTo.writeObject(myMessage);
-                    clientTo.flush();
-                } else {
-                    serverOut.writeObject(myMessage);
-                    serverOut.flush();
-                }
-            }
+    /**
+     * Sendet eine Nachricht zum anderen Server
+     */
+    private void sendMessageToOtherServer() {
+        try {
+            serverOut.writeObject(myMessage);
+            serverOut.flush();
         } catch (IOException e) {
             System.err.println(e);
-        } finally {
-            if(serverConnection != null) {
-                try {
-                    serverConnection.close();
-                } catch (IOException e) {
-                    System.err.println(e);
-                }
-            }
         }
-        chatLoop();
     }
 
 

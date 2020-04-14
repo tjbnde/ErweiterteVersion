@@ -5,84 +5,34 @@ import Model.Message;
 import Server.DataManager;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Date;
 
 public class ChatWorker extends Worker {
-    Chat myChat;
+    private Chat myChat;
 
-    public ChatWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Chat myChat, String hostname) {
-        super(dataManager, clientOut, clientIn);
+    public ChatWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname, Chat myChat) {
+        super(dataManager, clientOut, clientIn, hostname);
         this.myChat = myChat;
-        this.hostname = hostname;
     }
 
-    private boolean twoPhaseCommitChat() {
-        dataManager.writeLogEntry(new Date() + " - preparing commit for chat " + (myChat.getChatId()));
-        myChat.setStatus("PREPARE");
-        try {
-            serverOut.writeObject(myChat);
-            serverOut.flush();
-        } catch (IOException e) {
-            System.err.println(e);
-        }
-
-
-        if (!dataManager.chatCanBeCommited(myChat)) {
-            dataManager.writeLogEntry(new Date() + " - chat " + myChat.getChatId() + " can not be commited");
-            myChat.setStatus("ABORT");
-            try {
-                serverOut.writeObject(myChat);
-                serverOut.flush();
-            } catch (IOException e) {
-                System.err.println(e);
-            }
-            return false;
-        }
-        try {
-            myChat = (Chat) serverIn.readObject();
-            if (myChat.getStatus().equals("READY")) {
-                myChat.setStatus("COMMIT");
-                dataManager.writeLogEntry(new Date() + " - chatr " + myChat.getChatId() + " can be commited");
-            } else {
-                myChat.setStatus("ABORT");
-                dataManager.writeLogEntry(new Date() + " - register for user " + myChat.getChatId() + " can not be commited");
-                serverOut.writeObject(myChat);
-                serverOut.flush();
-                return false;
-            }
-            serverOut.writeObject(myChat);
-            serverOut.flush();
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println(e);
-        }
-        try {
-            myChat = (Chat) serverIn.readObject();
-            if (myChat.getStatus().equals("OK")) {
-                return true;
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println(e);
-        }
-        return false;
-    }
-
-
+    /**
+     * Startpunkt des Threads
+     * Prüft ob einem Chat erfolgreich beigetreten werden kann
+     * Sendet das Ergebnis an den Client zurück
+     *
+     * @see #twoPhaseCommitChat()
+     * @see Server.DataManager#chatExists(Chat)
+     * @see Server.DataManager#returnChatMessages(Chat)
+     * @see Server.DataManager#addChat(Chat)
+     * @see Server.DataManager#writeLogEntry(String)
+     * @see Worker#closeClientConnection()
+     */
     public void run() {
-        try {
-            serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
-            InputStream inputStream = serverConnection.getInputStream();
-            serverIn = new ObjectInputStream(inputStream);
-            OutputStream outputStream = serverConnection.getOutputStream();
-            serverOut = new ObjectOutputStream(outputStream);
-        } catch (IOException e) {
-            System.err.println(e);
-        }
         if (twoPhaseCommitChat()) {
             myChat.setSuccessful(true);
-            myChat.setErrorMessage("");
+            dataManager.writeLogEntry(new Date() + " - user " + myChat.getUserA() + "joined chat " + myChat.getChatId() + " successful");
+
             if (dataManager.chatExists(myChat)) {
                 ArrayList<Message> messages = dataManager.returnChatMessages(myChat);
                 myChat.setMessages(messages);
@@ -91,7 +41,7 @@ public class ChatWorker extends Worker {
             }
         } else {
             myChat.setSuccessful(false);
-            dataManager.writeLogEntry(new Date() + " - chat " + myChat.getChatId() + " not successful");
+            dataManager.writeLogEntry(new Date() + " - user " + myChat.getUserA() + "joined chat " + myChat.getChatId() + " not successful");
         }
 
         try {
@@ -100,14 +50,82 @@ public class ChatWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         } finally {
-            closeConnection();
-            if (serverConnection != null) {
-                try {
-                    serverConnection.close();
-                } catch (IOException e) {
-                    System.err.println(e);
-                }
-            }
+            closeClientConnection();
         }
     }
+
+    /**
+     * Prüft ob dem Chat erfolgreich beigetreten werden kann mit Hilfe des "Two Phase Commit" Protokolls
+     *
+     * @return Wahrheitswert ob dem Chat erfolgreich beigetreten werden kann
+     * @see Worker#openServerConnection()
+     * @see Server.DataManager#writeLogEntry(String)
+     * @see #sendChatToOtherServer()
+     * @see Server.DataManager#chatCanBeCommited(Chat)
+     * @see #readChatFromOtherServer()
+     * @see Worker#closeServerConnection()
+     */
+    private boolean twoPhaseCommitChat() {
+        openServerConnection();
+
+        dataManager.writeLogEntry(new Date() + " - preparing commit for user  " + myChat.getUserA() + " to join chat " + myChat.getChatId());
+        myChat.setStatus("PREPARE");
+        sendChatToOtherServer();
+
+        if (!dataManager.chatCanBeCommited(myChat)) {
+            dataManager.writeLogEntry(new Date() + " - user " + myChat.getUserA() + " joining " + myChat.getChatId() + " can not be commited");
+            myChat.setStatus("ABORT");
+            sendChatToOtherServer();
+            closeServerConnection();
+            return false;
+        }
+
+        readChatFromOtherServer();
+
+        if(myChat.getStatus().equals("ABORT")) {
+            myChat.setStatus("ABORT");
+            dataManager.writeLogEntry(new Date() + " - user " + myChat.getUserA() + " joining " + myChat.getChatId() + " can not be commited");
+            sendChatToOtherServer();
+            closeServerConnection();
+            return false;
+        }
+
+        if (myChat.getStatus().equals("READY")) {
+            myChat.setStatus("COMMIT");
+            dataManager.writeLogEntry(new Date() + " - user " + myChat.getUserA() + " joining " + myChat.getChatId() + " can be commited");
+        }
+
+        sendChatToOtherServer();
+
+        readChatFromOtherServer();
+
+        closeServerConnection();
+
+        return myChat.getStatus().equals("OK");
+    }
+
+    /**
+     * Liest einen Chat vom anderen Server
+     */
+    private void readChatFromOtherServer() {
+        try {
+            myChat = (Chat) serverIn.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println(e);
+        }
+    }
+
+    /**
+     * Sendet einen Chat zum anderen Server
+     */
+    private void sendChatToOtherServer() {
+        try {
+            serverOut.writeObject(myChat);
+            serverOut.flush();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+
+
 }

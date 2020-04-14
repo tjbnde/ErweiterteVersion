@@ -4,89 +4,36 @@ import Model.Register;
 import Server.DataManager;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.util.Date;
 
 public class RegisterWorker extends Worker {
     private Register myRegister;
 
-    public RegisterWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Register myRegister, String hostname) {
-        super(dataManager, clientOut, clientIn);
+    public RegisterWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname, Register myRegister) {
+        super(dataManager, clientOut, clientIn, hostname);
         this.myRegister = myRegister;
-        this.hostname = hostname;
     }
 
-    private boolean twoPhaseCommitRegister() {
-        dataManager.writeLogEntry(new Date() + " - preparing commit of register for user " + (myRegister.getUsername()));
-        myRegister.setStatus("PREPARE");
-        try {
-            serverOut.writeObject(myRegister);
-            serverOut.flush();
-        } catch (IOException e) {
-            System.err.println(e);
-        }
-
-
-        if (!dataManager.registerCanBeCommited(myRegister)) {
-            dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " can not be commited - username is already taken");
-            myRegister.setStatus("ABORT");
-            try {
-                serverOut.writeObject(myRegister);
-                serverOut.flush();
-            } catch (IOException e) {
-                System.err.println(e);
-            }
-            return false;
-        }
-        try {
-            myRegister = (Register) serverIn.readObject();
-            if (myRegister.getStatus().equals("READY")) {
-                myRegister.setStatus("COMMIT");
-                dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " can be commited");
-            } else {
-                myRegister.setStatus("ABORT");
-                dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " can not be commited");
-                serverOut.writeObject(myRegister);
-                serverOut.flush();
-                return false;
-            }
-            serverOut.writeObject(myRegister);
-            serverOut.flush();
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println(e);
-        }
-        try {
-            myRegister = (Register) serverIn.readObject();
-            if (myRegister.getStatus().equals("OK")) {
-                return true;
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println(e);
-        }
-        return false;
-    }
-
-
+    /**
+     * Startpunkt des Threads
+     * Prüft ob eine Registrierung erfolgreich ist
+     * Sendet das Ergebnis an den Client zurück
+     * Loggt einen Benutzer ein wenn die Registrierung erfolgreich ist
+     *
+     * @see #twoPhaseCommitRegister() ()
+     * @see Server.DataManager#addUser(Register)
+     * @see Server.DataManager#loginUser(String, ObjectOutputStream)
+     * @see Server.DataManager#writeLogEntry(String)
+     * @see Worker#closeClientConnection()
+     */
     public void run() {
-        try {
-            serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
-            InputStream inputStream = serverConnection.getInputStream();
-            serverIn = new ObjectInputStream(inputStream);
-            OutputStream outputStream = serverConnection.getOutputStream();
-            serverOut = new ObjectOutputStream(outputStream);
-        } catch (IOException e) {
-            System.err.println(e);
-        }
         if (twoPhaseCommitRegister()) {
             dataManager.addUser(myRegister);
             myRegister.setSuccessful(true);
-            myRegister.setErrorMessage("");
             dataManager.loginUser(myRegister.getUsername(), null);
             dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " successful");
         } else {
             myRegister.setSuccessful(false);
-            myRegister.setErrorMessage("** username is already taken");
             dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " not successful");
         }
 
@@ -96,14 +43,83 @@ public class RegisterWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         } finally {
-            closeConnection();
-            if (serverConnection != null) {
-                try {
-                    serverConnection.close();
-                } catch (IOException e) {
-                    System.err.println(e);
-                }
-            }
+            closeClientConnection();
         }
     }
+
+
+    /**
+     * Prüft ob eine Registrierung erfolgreich durchgeführt werden kann mit Hilfe des "Two Phase Commit" Protokolls
+     *
+     * @return Wahrheitswert ob die Registrierung erfolgreich durchgeführt werden kann
+     * @see Worker#openServerConnection()
+     * @see Server.DataManager#writeLogEntry(String)
+     * @see #sendRegisterToOtherServer() () ()
+     * @see Server.DataManager#registerCanBeCommited(Register)
+     * @see #readRegisterFromOtherServer()
+     * @see Worker#closeServerConnection()
+     */
+    private boolean twoPhaseCommitRegister() {
+        openServerConnection();
+
+        dataManager.writeLogEntry(new Date() + " - preparing commit of register for user " + (myRegister.getUsername()));
+        myRegister.setStatus("PREPARE");
+        sendRegisterToOtherServer();
+
+        if (!dataManager.registerCanBeCommited(myRegister)) {
+            dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " can not be commited - username is already taken");
+            myRegister.setStatus("ABORT");
+            sendRegisterToOtherServer();
+            closeServerConnection();
+            return false;
+        }
+
+        readRegisterFromOtherServer();
+
+        if(myRegister.getStatus().equals("ABORT")) {
+            myRegister.setStatus("ABORT");
+            dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " can not be commited");
+            sendRegisterToOtherServer();
+            closeServerConnection();
+            return false;
+        }
+
+        if (myRegister.getStatus().equals("READY")) {
+            myRegister.setStatus("COMMIT");
+            dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " can be commited");
+        }
+
+        sendRegisterToOtherServer();
+
+        readRegisterFromOtherServer();
+
+        closeServerConnection();
+
+        return myRegister.getStatus().equals("OK");
+    }
+
+    /**
+     * Liest eine Registrierung vom anderen Server
+     */
+    private void readRegisterFromOtherServer() {
+        try {
+            myRegister = (Register) serverIn.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println(e);
+        }
+    }
+
+    /**
+     * Sendet eine Registrierung zum anderen Server
+     */
+    private void sendRegisterToOtherServer() {
+        try {
+            serverOut.writeObject(myRegister);
+            serverOut.flush();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+
+
 }

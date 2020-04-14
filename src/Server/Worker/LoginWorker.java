@@ -4,104 +4,119 @@ import Model.Login;
 import Server.DataManager;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.util.Date;
 
 public class LoginWorker extends Worker {
     private Login myLogin;
 
-    public LoginWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, Login myLogin, String hostname) {
-        super(dataManager, clientOut, clientIn);
+    public LoginWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname, Login myLogin) {
+        super(dataManager, clientOut, clientIn, hostname);
         this.myLogin = myLogin;
-        this.hostname = hostname;
     }
 
-    private boolean twoPhaseCommitLogin() {
-        dataManager.writeLogEntry(new Date() + " - preparing commit of login for user " + (myLogin.getUsername()));
-        myLogin.setStatus("PREPARE");
-        try {
-            serverOut.writeObject(myLogin);
-            serverOut.flush();
-        } catch (IOException e) {
-            System.err.println(e);
-        }
-
-        if (!dataManager.loginCanBeCommited(myLogin)) {
-            dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can not be commited - wrong username or password");
-            myLogin.setStatus("ABORT");
-            try {
-                serverOut.writeObject(myLogin);
-                serverOut.flush();
-            } catch (IOException e) {
-                System.err.println(e);
-            }
-            return false;
-        }
-        try {
-            myLogin = (Login) serverIn.readObject();
-            if (myLogin.getStatus().equals("READY")) {
-                myLogin.setStatus("COMMIT");
-                dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can be commited");
-            } else {
-                myLogin.setStatus("ABORT");
-                dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can not be commited");
-                serverOut.writeObject(myLogin);
-                serverOut.flush();
-                return false;
-            }
-            serverOut.writeObject(myLogin);
-            serverOut.flush();
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println(e);
-        }
-        try {
-            myLogin = (Login) serverIn.readObject();
-            if (myLogin.getStatus().equals("OK")) {
-                return true;
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println(e);
-        }
-        return false;
-    }
-
+    /**
+     * Startpunkt des Threads
+     * Prüft ob ein Login erfolgreich ist
+     * Sendet das Ergebnis an den Client zurück
+     * Loggt einen Benutzer ein wenn der Login erfolgreich ist
+     *
+     * @see #twoPhaseCommitLogin()
+     * @see Server.DataManager#loginUser(Login, ObjectOutputStream)
+     * @see Server.DataManager#writeLogEntry(String)
+     * @see Worker#closeClientConnection()
+     */
     public void run() {
-        try {
-            serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
-            InputStream inputStream = serverConnection.getInputStream();
-            serverIn = new ObjectInputStream(inputStream);
-            OutputStream outputStream = serverConnection.getOutputStream();
-            serverOut = new ObjectOutputStream(outputStream);
-        } catch (IOException e) {
-            System.err.println(e);
-        }
-
         if (twoPhaseCommitLogin()) {
             myLogin.setSuccessful(true);
-            myLogin.setErrorMessage("");
             dataManager.loginUser(myLogin, null);
             dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " successful");
         } else {
             myLogin.setSuccessful(false);
-            myLogin.setErrorMessage("** wrong username or password");
             dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " not successful");
         }
+
         try {
             clientOut.writeObject(myLogin);
             clientOut.flush();
         } catch (IOException e) {
             System.err.println(e);
         } finally {
-            closeConnection();
-            if (serverConnection != null) {
-                try {
-                    serverConnection.close();
-                } catch (IOException e) {
-                    System.err.println(e);
-                }
-            }
+            closeClientConnection();
+        }
+    }
+
+
+    /**
+     * Prüft ob ein Login erfolgreich durchgeführt werden kann mit Hilfe des "Two Phase Commit" Protokolls
+     *
+     * @return Wahrheitswert ob der Login erfolgreich durchgeführt werden kann
+     * @see Worker#openServerConnection()
+     * @see Server.DataManager#writeLogEntry(String)
+     * @see #sendLoginToOtherServer() ()
+     * @see Server.DataManager#loginCanBeCommited(Login)
+     * @see #readLoginFromOtherServer() ()
+     * @see Worker#closeServerConnection()
+     */
+    private boolean twoPhaseCommitLogin() {
+        openServerConnection();
+
+        dataManager.writeLogEntry(new Date() + " - preparing commit of login for user " + myLogin.getUsername());
+        myLogin.setStatus("PREPARE");
+        sendLoginToOtherServer();
+
+        if (!dataManager.loginCanBeCommited(myLogin)) {
+            dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can not be commited - wrong username or password");
+            myLogin.setStatus("ABORT");
+            sendLoginToOtherServer();
+            closeServerConnection();
+            return false;
         }
 
+        readLoginFromOtherServer();
+
+        if (myLogin.getStatus().equals("ABORT")) {
+            myLogin.setStatus("ABORT");
+            dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can not be commited");
+            sendLoginToOtherServer();
+            closeServerConnection();
+            return false;
+        }
+
+        if (myLogin.getStatus().equals("READY")) {
+            myLogin.setStatus("COMMIT");
+            dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can be commited");
+        }
+
+        sendLoginToOtherServer();
+
+        readLoginFromOtherServer();
+
+        closeServerConnection();
+
+        return myLogin.getStatus().equals("OK");
+    }
+
+
+    /**
+     * Liest einen Login vom anderen Server
+     */
+    private void readLoginFromOtherServer() {
+        try {
+            myLogin = (Login) serverIn.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println(e);
+        }
+    }
+
+    /**
+     * Sendet einen Login zum anderen Server
+     */
+    private void sendLoginToOtherServer() {
+        try {
+            serverOut.writeObject(myLogin);
+            serverOut.flush();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
     }
 }
