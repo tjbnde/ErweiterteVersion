@@ -5,8 +5,7 @@ import java.util.ArrayList;
 
 /**
  * Model Klasse Chat
- * Implementiert Serializable damit Instanzen dieser Klasse
- * über ObjectInputStream & ObjectOutputStream versendet und gelesen werden können
+ * Implementiert Serializable um Instanzen dieser Klasse per ObjectInputStream und ObjectOutputStream zu versenden
  */
 public class Chat implements Serializable {
     // unique chat id

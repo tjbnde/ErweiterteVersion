@@ -6,9 +6,19 @@ import Server.DataManager;
 import java.io.*;
 import java.util.Date;
 
+
 public class LoginWorker extends Worker {
     private Login myLogin;
-
+    
+    /**
+     * Konstruktor der Klasse
+     * @param dataManager Datenmanager
+     * @param clientOut Output Stream zum Client
+     * @param clientIn Input Stream vom Client
+     * @param hostname Hostname vom anderen Server
+     * @param myLogin Zu verarbeitender Login
+     * @see Worker#Worker(DataManager, ObjectOutputStream, ObjectInputStream, String) 
+     */
     public LoginWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname, Login myLogin) {
         super(dataManager, clientOut, clientIn, hostname);
         this.myLogin = myLogin;
