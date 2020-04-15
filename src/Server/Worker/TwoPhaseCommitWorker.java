@@ -16,9 +16,6 @@ public class TwoPhaseCommitWorker implements Runnable {
     private ObjectInputStream serverIn;
     private ObjectOutputStream serverOut;
 
-
-    private ObjectOutputStream clientOut;
-
     private ServerSocket server;
 
     private DataManager dataManager;
@@ -33,7 +30,6 @@ public class TwoPhaseCommitWorker implements Runnable {
         connectionToOtherServer = null;
         serverIn = null;
         serverOut = null;
-        clientOut = null;
     }
 
     @Override
@@ -46,18 +42,9 @@ public class TwoPhaseCommitWorker implements Runnable {
                 InputStream inputStream = connectionToOtherServer.getInputStream();
                 serverIn = new ObjectInputStream(inputStream);
 
-
                 Object nextElement = serverIn.readObject();
                 if (nextElement instanceof Message) {
                     Message myMessage = (Message) nextElement;
-
-                    // means that the other server doesn't know the output stream to client
-                    if(myMessage.getStatus().equals("OK")) {
-                        clientOut = dataManager.getChatPartnerSocket(myMessage);
-                        clientOut.writeObject(myMessage);
-                        clientOut.flush();
-                        continue;
-                    }
 
                     dataManager.writeLogEntry(new Date() + " - testing if message " + (myMessage.getHeader().getMessageId()) + " can be committed locally");
                     if (dataManager.messageCanBeCommited(myMessage)) {

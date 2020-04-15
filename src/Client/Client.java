@@ -176,12 +176,15 @@ public class Client {
                     System.out.println(myMessage.getText());
                 }
             } else {
-                closeConnection();
                 System.err.println(chat.getErrorMessage());
                 joinChat();
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
+        } finally {
+            if(!chat.isSuccessful()) {
+                closeConnection();
+            }
         }
     }
 

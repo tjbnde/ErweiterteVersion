@@ -4,14 +4,21 @@ import Model.Message;
 import Server.DataManager;
 
 import java.io.*;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.util.Date;
 
 public class MessageWorker extends Worker {
     private Message myMessage;
 
+    private Socket connectionToWriterServer;
+    private ObjectOutputStream writerOut;
+
     public MessageWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname) {
         super(dataManager, clientOut, clientIn, hostname);
         myMessage = null;
+        connectionToWriterServer = null;
+        writerOut = null;
     }
 
     /**
@@ -23,7 +30,6 @@ public class MessageWorker extends Worker {
      * @see Server.DataManager#loginUser(String, ObjectOutputStream)
      */
     public void run() {
-        System.out.println("user " + myMessage.getHeader().getSendFrom() + " connected");
         while (true) {
             try {
                 myMessage = (Message) clientIn.readObject();
@@ -86,12 +92,13 @@ public class MessageWorker extends Worker {
     }
 
     /**
-     * Sendet eine Nachricht an den bestimmten Empfänger
-     * Leitet sie an den anderen Server weiter wenn kein entsprechender Output Stream vorhanden ist
+     * Sends message to recipient. Sends the Message to the other server if no output stream to the recipient is known
      *
      * @see Server.DataManager#writeMessage(Message)
      * @see Server.DataManager#getChatPartnerSocket(Message)
-     * @see #sendMessageToOtherServer()
+     * @see #openServerConnection()
+     * @see #sendMessageToWriterServer()
+     * @see #closeServerConnectionToWriterServer()
      */
     private void sendMessage() {
         if (twoPhaseCommitMessage()) {
@@ -105,7 +112,9 @@ public class MessageWorker extends Worker {
                     System.err.println(e);
                 }
             } else {
-                sendMessageToOtherServer();
+                openServerConnectionToWriterServer();
+                sendMessageToWriterServer();
+                closeServerConnectionToWriterServer();
             }
         }
     }
@@ -131,6 +140,35 @@ public class MessageWorker extends Worker {
             serverOut.flush();
         } catch (IOException e) {
             System.err.println(e);
+        }
+    }
+
+    private void sendMessageToWriterServer() {
+        try {
+            writerOut.writeObject(myMessage);
+            writerOut.flush();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+
+    void openServerConnectionToWriterServer() {
+        try {
+            connectionToWriterServer = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("messageWriterPort")));
+            OutputStream outputStream = serverConnection.getOutputStream();
+            writerOut = new ObjectOutputStream(outputStream);
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+    }
+
+    void closeServerConnectionToWriterServer() {
+        if (connectionToWriterServer != null) {
+            try {
+                connectionToWriterServer.close();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
         }
     }
 
