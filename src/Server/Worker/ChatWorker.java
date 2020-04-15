@@ -32,6 +32,7 @@ public class ChatWorker extends Worker {
         if (twoPhaseCommitChat()) {
             myChat.setSuccessful(true);
             dataManager.writeLogEntry(new Date() + " - user " + myChat.getUserA() + "joined chat " + myChat.getChatId() + " successful");
+            dataManager.loginUser(myChat.getUserA(), clientOut);
 
             if (dataManager.chatExists(myChat)) {
                 ArrayList<Message> messages = dataManager.returnChatMessages(myChat);
@@ -50,7 +51,13 @@ public class ChatWorker extends Worker {
         } catch (IOException e) {
             System.err.println(e);
         } finally {
-            closeClientConnection();
+            if(!myChat.isSuccessful()) {
+                closeClientConnection();
+            } else {
+                MessageWorker myMessageWorker = new MessageWorker(dataManager, clientOut, clientIn, hostname);
+                Thread t = new Thread(myMessageWorker);
+                t.start();
+            }
         }
     }
 

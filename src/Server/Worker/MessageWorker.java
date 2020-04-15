@@ -9,9 +9,9 @@ import java.util.Date;
 public class MessageWorker extends Worker {
     private Message myMessage;
 
-    public MessageWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname, Message myMessage) {
+    public MessageWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname) {
         super(dataManager, clientOut, clientIn, hostname);
-        this.myMessage = myMessage;
+        myMessage = null;
     }
 
     /**
@@ -21,14 +21,17 @@ public class MessageWorker extends Worker {
      * Springt in eine Endlos Schleife
      *
      * @see Server.DataManager#loginUser(String, ObjectOutputStream)
-     * @see #chatLoop()
      */
     public void run() {
-        dataManager.loginUser(myMessage.getHeader().getSendFrom(), clientOut);
-
-        sendMessage();
-
-        chatLoop();
+        System.out.println("user " + myMessage.getHeader().getSendFrom() + " connected");
+        while (true) {
+            try {
+                myMessage = (Message) clientIn.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                System.err.println(e);
+            }
+            sendMessage();
+        }
     }
 
 
@@ -80,25 +83,6 @@ public class MessageWorker extends Worker {
         closeServerConnection();
 
         return myMessage.getStatus().equals("OK");
-    }
-
-
-    /**
-     * Endlos Schleife
-     * Eintreffende Nachrichten werden gelesen
-     * Diese Nachrichten werden verarbeitet
-     *
-     * @see #sendMessage()
-     */
-    private void chatLoop() {
-        while (true) {
-            try {
-                myMessage = (Message) clientIn.readObject();
-            } catch (IOException | ClassNotFoundException e) {
-                System.err.println(e);
-            }
-            sendMessage();
-        }
     }
 
     /**

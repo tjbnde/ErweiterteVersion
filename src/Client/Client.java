@@ -176,13 +176,12 @@ public class Client {
                     System.out.println(myMessage.getText());
                 }
             } else {
+                closeConnection();
                 System.err.println(chat.getErrorMessage());
                 joinChat();
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
-        } finally {
-            closeConnection();
         }
     }
 
@@ -193,12 +192,9 @@ public class Client {
      * @see MessageReaderWorker
      */
     private void chatLoop() {
-        startConnection();
-
         MessageReaderWorker readerWorker = new MessageReaderWorker(serverIn);
         Thread t = new Thread(readerWorker);
         t.start();
-
         while (isLoggedIn()) {
             try {
                 String messageText = null;
@@ -488,11 +484,11 @@ public class Client {
     private String returnRandomServerHostname() {
         double random = Math.random();
 
-        if (random < 0.5) {
-            return serverHostname[0];
-        } else {
+       // if (random < 0.5) {
+        //    return serverHostname[0];
+       // } else {
             return serverHostname[1];
-        }
+      //  }
     }
 
     public String getUsername() {

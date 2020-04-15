@@ -40,6 +40,7 @@ public class MessageReaderWorker implements Runnable {
             System.out.println();
             System.out.println(myMessage.getHeader().getSendFrom() + ": ");
             System.out.println(myMessage.getText());
+            System.out.println();
         }
 
     }
