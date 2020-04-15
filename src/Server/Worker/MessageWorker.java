@@ -113,8 +113,20 @@ public class MessageWorker extends Worker {
                 }
             } else {
                 openServerConnectionToWriterServer();
-                sendMessageToWriterServer();
-                closeServerConnectionToWriterServer();
+                try {
+                    writerOut.writeObject(myMessage);
+                    writerOut.flush();
+                } catch (IOException e) {
+                    System.err.println(e);
+                } finally {
+                    if (connectionToWriterServer != null) {
+                        try {
+                            connectionToWriterServer.close();
+                        } catch (IOException e) {
+                            System.err.println(e);
+                        }
+                    }
+                }
             }
         }
     }
@@ -143,34 +155,18 @@ public class MessageWorker extends Worker {
         }
     }
 
-    private void sendMessageToWriterServer() {
-        try {
-            writerOut.writeObject(myMessage);
-            writerOut.flush();
-        } catch (IOException e) {
-            System.err.println(e);
-        }
-    }
+
 
     void openServerConnectionToWriterServer() {
         try {
             connectionToWriterServer = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("messageWriterPort")));
-            OutputStream outputStream = serverConnection.getOutputStream();
+            OutputStream outputStream = connectionToWriterServer.getOutputStream();
             writerOut = new ObjectOutputStream(outputStream);
         } catch (IOException e) {
             System.err.println(e);
         }
     }
 
-    void closeServerConnectionToWriterServer() {
-        if (connectionToWriterServer != null) {
-            try {
-                connectionToWriterServer.close();
-            } catch (IOException e) {
-                System.err.println(e);
-            }
-        }
-    }
 
 
 }

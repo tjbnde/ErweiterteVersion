@@ -55,9 +55,13 @@ public class Server {
             Thread twoPhaseCommitThread =  new Thread(twoPhaseCommitWorker);
             twoPhaseCommitThread.start();
 
+            System.out.println("** two phase commit worker started successful");
+
             MessageWriterWorker messageWriterWorker = new MessageWriterWorker(dataManager, messageWriterPort);
             Thread writerThread = new Thread(messageWriterWorker);
             writerThread.start();
+
+            System.out.println("** message writer worker started successful");
 
         } catch (IOException e) {
             System.err.println(e);
