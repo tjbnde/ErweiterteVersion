@@ -6,7 +6,6 @@ import Model.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Iterator;
 import java.util.Properties;
 
 public class Client {
@@ -157,36 +156,101 @@ public class Client {
     private void joinChat() {
         startConnection();
 
+        String chatPartner = "";
+        Chat myChat;
+
         System.out.println("** enter username of chat partner");
 
         try {
-            String chatPartner = userInput.readLine();
+            chatPartner = userInput.readLine();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
 
-            chat = new Chat(username, chatPartner);
-            serverOut.writeObject(chat);
+        myChat = new Chat(username, chatPartner);
 
-            chat = (Chat) serverIn.readObject();
+        try {
+            serverOut.writeObject(myChat);
+            serverOut.flush();
+        } catch (IOException e) {
+            System.err.println("** lost connection to server");
+            System.err.println("** trying to reconnect");
+            joinChat(myChat);
+            return;
+        }
 
-            if (chat.isSuccessful()) {
-                System.out.println("** chat successfully joined");
-                Iterator<Message> i = chat.getMessages().iterator();
-                while (i.hasNext()) {
-                    Message myMessage = i.next();
-                    System.out.println(myMessage.getHeader().getSendFrom() + ": ");
-                    System.out.println(myMessage.getText());
-                }
-            } else {
-                System.err.println(chat.getErrorMessage());
-                joinChat();
-            }
-        } catch (IOException | ClassNotFoundException e) {
+        try {
+            myChat = (Chat) serverIn.readObject();
+        } catch (IOException e) {
+            System.err.println("** lost connection to server");
+            System.err.println("** trying to reconnect");
+            joinChat(myChat);
+            return;
+        } catch (ClassNotFoundException e) {
             System.err.println(e);
         } finally {
             if (!chat.isSuccessful()) {
                 closeConnection();
             }
         }
+
+
+        if (!myChat.isSuccessful()) {
+            System.err.println(chat.getErrorMessage());
+            joinChat();
+        } else {
+            System.out.println("** chat successfully joined");
+            chat = myChat;
+            for (Message myMessage : chat.getMessages()) {
+                System.out.println(myMessage.getHeader().getSendFrom() + ": ");
+                System.out.println(myMessage.getText());
+            }
+        }
     }
+
+    /**
+     * If the connection to the server fails this method gets called and tries to send it to the server until it has been received.
+     *
+     * @param myChat - Chat that gets send
+     */
+    private void joinChat(Chat myChat) {
+        startConnection();
+        System.out.println("** connection to server established successful");
+
+        try {
+            serverOut.writeObject(myChat);
+            serverOut.flush();
+        } catch (IOException e) {
+            joinChat(myChat);
+            return;
+        }
+
+        try {
+            myChat = (Chat) serverIn.readObject();
+        } catch (IOException e) {
+            joinChat(myChat);
+            return;
+        } catch (ClassNotFoundException e) {
+            System.err.println(e);
+        } finally {
+            if (!myChat.isSuccessful()) {
+                closeConnection();
+            }
+        }
+
+        if (myChat.isSuccessful()) {
+            System.out.println("** chat successfully joined");
+            chat = myChat;
+            for (Message myMessage : chat.getMessages()) {
+                System.out.println(myMessage.getHeader().getSendFrom() + ": ");
+                System.out.println(myMessage.getText());
+            }
+        } else {
+            System.err.println(myChat.getErrorMessage());
+            joinChat();
+        }
+    }
+
 
     /**
      * Endless loop, where the user can write messages, which get send to the server
@@ -198,27 +262,48 @@ public class Client {
         MessageReaderWorker readerWorker = new MessageReaderWorker(serverIn, this);
         Thread t = new Thread(readerWorker);
         t.start();
-        while (isLoggedIn()) {
-            try {
-                String messageText = null;
-                while (messageText == null || messageText.isEmpty()) {
-                    messageText = userInput.readLine();
-                }
 
-                System.out.println(username + ": ");
-                System.out.println(messageText);
-                System.out.println();
-                if (messageText.equals("logout")) {
-                    logoutDialog();
+        while (isLoggedIn()) {
+            String messageText = null;
+            while (messageText == null || messageText.isEmpty()) {
+                try {
+                    messageText = userInput.readLine();
+                } catch (IOException e) {
+                    System.err.println(e);
                 }
-                Message myMessage = new Message(username, chat.getUserB(), globalLamportCounter, messageText);
-                globalLamportCounter++;
+            }
+
+            if (messageText.equals("logout")) {
+                logoutDialog();
+            }
+
+            System.out.println(username + ": ");
+            System.out.println(messageText);
+            System.out.println();
+
+            Message myMessage = new Message(username, chat.getUserB(), globalLamportCounter, messageText);
+            globalLamportCounter++;
+
+            try {
                 serverOut.writeObject(myMessage);
                 serverOut.flush();
-
             } catch (IOException e) {
-                System.err.println(e);
+                System.err.println("** lost connection to server");
+                System.err.println("** trying to reconnect");
+                t.interrupt();
+                sendMessage(myMessage);
+                return;
             }
+        }
+    }
+
+    private void sendMessage(Message myMessage) {
+        startConnection();
+        try {
+            serverOut.writeObject(myMessage);
+            serverOut.flush();
+        } catch (IOException e) {
+            sendMessage(myMessage);
         }
     }
 
@@ -304,6 +389,11 @@ public class Client {
         }
     }
 
+    /**
+     * If the connection to the server fails this method gets called and tries to send it to the server until it has been received.
+     *
+     * @param myLogin - Login that gets send
+     */
     private void login(Login myLogin) {
         startConnection();
         System.out.println("** connection to server established successful");
@@ -365,7 +455,7 @@ public class Client {
 
         try {
             myRegister = (Register) serverIn.readObject();
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.err.println("** lost connection to server");
             System.err.println("** trying to reconnect");
             register(myRegister);
@@ -385,6 +475,11 @@ public class Client {
         }
     }
 
+    /**
+     * If the connection to the server fails this method gets called and tries to send it to the server until it has been received.
+     *
+     * @param myRegister - Register that gets send
+     */
     private void register(Register myRegister) {
         startConnection();
         System.out.println("** connection to server established successful");

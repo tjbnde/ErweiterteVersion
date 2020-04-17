@@ -112,6 +112,10 @@ public class Server {
             Chat myChat = (Chat) nextElement;
             ChatWorker chatWorker = new ChatWorker(dataManager, clientOut, clientIn, serverHostname, myChat);
             t = new Thread(chatWorker);
+        } else if (nextElement instanceof Message){
+            Message myMessage = (Message) nextElement;
+            MessageWorker messageWorker = new MessageWorker(dataManager, clientOut, clientIn, serverHostname, myMessage);
+            t = new Thread(messageWorker);
         }
         return t;
     }

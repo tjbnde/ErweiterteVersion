@@ -19,7 +19,16 @@ public class MessageWorker extends Worker {
         myMessage = null;
         connectionToWriterServer = null;
         writerOut = null;
+
     }
+    public MessageWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname, Message myMessage) {
+        super(dataManager, clientOut, clientIn, hostname);
+        this.myMessage = myMessage;
+        connectionToWriterServer = null;
+        writerOut = null;
+        sendMessage();
+    }
+
 
     /**
      * Startpunkt des Threads
