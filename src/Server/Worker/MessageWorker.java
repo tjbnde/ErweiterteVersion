@@ -97,8 +97,6 @@ public class MessageWorker extends Worker {
      * @see Server.DataManager#writeMessage(Message)
      * @see Server.DataManager#getChatPartnerSocket(Message)
      * @see #openServerConnection()
-     * @see #sendMessageToWriterServer()
-     * @see #closeServerConnectionToWriterServer()
      */
     private void sendMessage() {
         if (twoPhaseCommitMessage()) {

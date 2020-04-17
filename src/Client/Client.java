@@ -182,7 +182,7 @@ public class Client {
         } catch (IOException | ClassNotFoundException e) {
             System.err.println(e);
         } finally {
-            if(!chat.isSuccessful()) {
+            if (!chat.isSuccessful()) {
                 closeConnection();
             }
         }
@@ -195,7 +195,7 @@ public class Client {
      * @see MessageReaderWorker
      */
     private void chatLoop() {
-        MessageReaderWorker readerWorker = new MessageReaderWorker(serverIn);
+        MessageReaderWorker readerWorker = new MessageReaderWorker(serverIn, this);
         Thread t = new Thread(readerWorker);
         t.start();
         while (isLoggedIn()) {
@@ -252,37 +252,90 @@ public class Client {
     private void login() {
         startConnection();
 
-        String username = usernameInput();
+        String username;
+        String password = "";
+
+        username = usernameInput();
 
         if (username.equals("exit")) {
-            System.out.println("** exit successfully");
+            System.out.println("** exit successful");
             System.exit(0);
         }
 
         System.out.println("> enter your password");
 
         try {
-            String password = userInput.readLine();
-            Login myLogin = new Login(username, password);
+            password = userInput.readLine();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
 
+        Login myLogin = new Login(username, password);
+
+        try {
             serverOut.writeObject(myLogin);
             serverOut.flush();
+        } catch (IOException e) {
+            System.err.println("** lost connection to server");
+            System.err.println("** trying to reconnect");
+            login(myLogin);
+            return;
+        }
 
+        try {
             myLogin = (Login) serverIn.readObject();
-
-            if (myLogin.isSuccessful()) {
-                this.username = username;
-                this.password = password;
-            } else {
-                System.err.println(myLogin.getErrorMessage());
-                login();
-            }
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
+            System.err.println("** lost connection to server");
+            System.err.println("** trying to reconnect");
+            login(myLogin);
+            return;
+        } catch (ClassNotFoundException e) {
             System.err.println(e);
         } finally {
             closeConnection();
         }
+
+        if (myLogin.isSuccessful()) {
+            this.username = username;
+            this.password = password;
+        } else {
+            System.err.println(myLogin.getErrorMessage());
+            login();
+        }
     }
+
+    private void login(Login myLogin) {
+        startConnection();
+        System.out.println("** connection to server established successful");
+
+        try {
+            serverOut.writeObject(myLogin);
+            serverOut.flush();
+        } catch (IOException e) {
+            login(myLogin);
+            return;
+        }
+
+        try {
+            myLogin = (Login) serverIn.readObject();
+        } catch (IOException e) {
+            login(myLogin);
+            return;
+        } catch (ClassNotFoundException e) {
+            System.err.println(e);
+        } finally {
+            closeConnection();
+        }
+
+        if (myLogin.isSuccessful()) {
+            this.username = myLogin.getUsername();
+            this.password = myLogin.getPassword();
+        } else {
+            System.err.println(myLogin.getErrorMessage());
+            login();
+        }
+    }
+
 
     /**
      * User creates a new username and password, which gets send to the server. The server responds whether the registration was successful or not. If not, the method calls itself.
@@ -292,6 +345,8 @@ public class Client {
      */
     private void register() {
         startConnection();
+        String username;
+        String password;
 
         username = usernameInput();
         password = createPassword();
@@ -301,20 +356,64 @@ public class Client {
         try {
             serverOut.writeObject(myRegister);
             serverOut.flush();
+        } catch (IOException e) {
+            System.err.println("** lost connection to server");
+            System.err.println("** trying to reconnect");
+            register(myRegister);
+            return;
+        }
 
+        try {
             myRegister = (Register) serverIn.readObject();
-
-            if (myRegister.isSuccessful()) {
-                this.username = myRegister.getUsername();
-                this.password = myRegister.getPassword();
-            } else {
-                System.err.println(myRegister.getErrorMessage());
-                register();
-            }
-        } catch (IOException | ClassNotFoundException e) {
+        } catch(IOException e) {
+            System.err.println("** lost connection to server");
+            System.err.println("** trying to reconnect");
+            register(myRegister);
+            return;
+        } catch (ClassNotFoundException e) {
             System.err.println(e);
         } finally {
             closeConnection();
+        }
+
+        if (myRegister.isSuccessful()) {
+            this.username = username;
+            this.password = password;
+        } else {
+            System.err.println(myRegister.getErrorMessage());
+            register();
+        }
+    }
+
+    private void register(Register myRegister) {
+        startConnection();
+        System.out.println("** connection to server established successful");
+
+        try {
+            serverOut.writeObject(myRegister);
+            serverOut.flush();
+        } catch (IOException e) {
+            register(myRegister);
+            return;
+        }
+
+        try {
+            myRegister = (Register) serverIn.readObject();
+        } catch (IOException e) {
+            register(myRegister);
+            return;
+        } catch (ClassNotFoundException e) {
+            System.err.println(e);
+        } finally {
+            closeConnection();
+        }
+
+        if (myRegister.isSuccessful()) {
+            this.username = myRegister.getUsername();
+            this.password = myRegister.getPassword();
+        } else {
+            System.err.println(myRegister.getErrorMessage());
+            register();
         }
     }
 
@@ -324,10 +423,8 @@ public class Client {
      */
     private void printInfo() {
         System.out.println("** printing a list of all commands");
-        System.out.println("** enter [command]-help to get infos for a specific command");
         System.out.println("login");
         System.out.println("register");
-        System.out.println("autoregister");
         System.out.println("exit");
         System.out.println();
     }
@@ -340,13 +437,35 @@ public class Client {
 
         try {
             connection = new Socket(InetAddress.getByName(responsiveServerHostname), communicationPort);
-            OutputStream outputStream = connection.getOutputStream();
-            serverOut = new ObjectOutputStream(outputStream);
-            InputStream inputStream = connection.getInputStream();
-            serverIn = new ObjectInputStream(inputStream);
+
         } catch (IOException e) {
+            System.err.println("** connection to server failed");
+            System.err.println("** trying to reconnect");
+        }
+
+        if (connection != null) {
+            try {
+                OutputStream outputStream = connection.getOutputStream();
+                serverOut = new ObjectOutputStream(outputStream);
+                InputStream inputStream = connection.getInputStream();
+                serverIn = new ObjectInputStream(inputStream);
+            } catch (IOException e) {
+                System.err.println("** lost connection to server");
+                System.err.println("** trying to reconnect");
+                restartConnection();
+            }
+        } else {
+            restartConnection();
+        }
+    }
+
+    private void restartConnection() {
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
             System.err.println(e);
         }
+        startConnection();
     }
 
 
@@ -437,6 +556,7 @@ public class Client {
 
     /**
      * checks if the user is logged in
+     *
      * @return true if the user is logged in
      */
     private boolean isLoggedIn() {
@@ -487,11 +607,24 @@ public class Client {
     private String returnRandomServerHostname() {
         double random = Math.random();
 
-       // if (random < 0.5) {
-        //    return serverHostname[0];
-       // } else {
-            return serverHostname[1];
-      //  }
+        /*if (random < 0.5) {
+            return serverHostname[0];
+        } else {
+       */
+        return serverHostname[1];
+        // }
+    }
+
+    public void setGlobalLamportCounter(int globalLamportCounter) {
+        if (globalLamportCounter > this.globalLamportCounter) {
+            this.globalLamportCounter = globalLamportCounter + 1;
+        } else {
+            this.globalLamportCounter++;
+        }
+    }
+
+    public Chat getChat() {
+        return chat;
     }
 
     public String getUsername() {

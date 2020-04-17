@@ -41,8 +41,10 @@ public class MessageWriterWorker implements Runnable {
                 Message nextMessage = (Message) serverIn.readObject();
 
                 clientOut = dataManager.getChatPartnerSocket(nextMessage);
-                clientOut.writeObject(nextMessage);
-                clientOut.flush();
+                if(clientOut != null) {
+                    clientOut.writeObject(nextMessage);
+                    clientOut.flush();
+                }
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println(e);
             }
