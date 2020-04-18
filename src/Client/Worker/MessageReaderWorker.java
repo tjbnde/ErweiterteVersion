@@ -22,6 +22,8 @@ public class MessageReaderWorker implements Runnable {
      */
     private Client myClient;
 
+    private boolean exit;
+
     /**
      * Creates a worker thread that can receive messages from the server
      *
@@ -32,6 +34,7 @@ public class MessageReaderWorker implements Runnable {
         this.serverIn = serverIn;
         this.myClient = myClient;
         myMessage = null;
+        exit = false;
     }
 
     /**
@@ -39,18 +42,24 @@ public class MessageReaderWorker implements Runnable {
      */
     @Override
     public void run() {
-        while (true) {
+        while (!exit) {
             try {
                 myMessage = (Message) serverIn.readObject();
-                myClient.setGlobalLamportCounter(myMessage.getHeader().getLocalLamportCounter());
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (IOException e) {
+                exit = true;
+            } catch (ClassNotFoundException e) {
                 System.err.println(e);
             }
-            if(myMessage.getHeader().getSendFrom().equals(myClient.getChat().getUserB())) {
-                System.out.println();
-                System.out.println(myMessage.getHeader().getSendFrom() + ": ");
-                System.out.println(myMessage.getText());
-                System.out.println();
+
+            if(myMessage != null) {
+                myClient.setGlobalLamportCounter(myMessage.getHeader().getLocalLamportCounter());
+                
+                if (myMessage.getHeader().getSendFrom().equals(myClient.getChat().getUserB())) {
+                    System.out.println();
+                    System.out.println(myMessage.getHeader().getSendFrom() + ": ");
+                    System.out.println(myMessage.getText());
+                    System.out.println();
+                }
             }
         }
 

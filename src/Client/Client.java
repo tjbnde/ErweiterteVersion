@@ -188,15 +188,11 @@ public class Client {
             return;
         } catch (ClassNotFoundException e) {
             System.err.println(e);
-        } finally {
-            if (!chat.isSuccessful()) {
-                closeConnection();
-            }
         }
 
-
         if (!myChat.isSuccessful()) {
-            System.err.println(chat.getErrorMessage());
+            closeConnection();
+            System.err.println(myChat.getErrorMessage());
             joinChat();
         } else {
             System.out.println("** chat successfully joined");
