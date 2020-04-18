@@ -273,9 +273,6 @@ public class Client {
                 logoutDialog();
             }
 
-            System.out.println(username + ": ");
-            System.out.println(messageText);
-            System.out.println();
 
             Message myMessage = new Message(username, chat.getUserB(), globalLamportCounter, messageText);
             globalLamportCounter++;
@@ -283,21 +280,32 @@ public class Client {
             try {
                 serverOut.writeObject(myMessage);
                 serverOut.flush();
+                System.out.println(username + ": ");
+                System.out.println(messageText);
+                System.out.println();
             } catch (IOException e) {
                 System.err.println("** lost connection to server");
                 System.err.println("** trying to reconnect");
                 t.interrupt();
                 sendMessage(myMessage);
-                return;
             }
         }
     }
 
+    /**
+     * Sends message to server if connection has been lost
+     *
+     * @param myMessage - Message that gets send
+     */
     private void sendMessage(Message myMessage) {
         startConnection();
         try {
             serverOut.writeObject(myMessage);
             serverOut.flush();
+            System.out.println(username + ": ");
+            System.out.println(myMessage.getText());
+            System.out.println();
+            chatLoop();
         } catch (IOException e) {
             sendMessage(myMessage);
         }

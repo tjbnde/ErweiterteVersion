@@ -53,7 +53,7 @@ public class MessageReaderWorker implements Runnable {
 
             if(myMessage != null) {
                 myClient.setGlobalLamportCounter(myMessage.getHeader().getLocalLamportCounter());
-                
+
                 if (myMessage.getHeader().getSendFrom().equals(myClient.getChat().getUserB())) {
                     System.out.println();
                     System.out.println(myMessage.getHeader().getSendFrom() + ": ");

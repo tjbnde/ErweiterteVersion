@@ -13,7 +13,6 @@ public class DataManager {
     private File userFile;
     private File chatListFile;
     private File chatFile;
-    private File loggedUserFile;
     private File logFile;
 
     private Properties properties;
