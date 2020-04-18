@@ -26,6 +26,7 @@ public class MessageWorker extends Worker {
         this.myMessage = myMessage;
         connectionToWriterServer = null;
         writerOut = null;
+        dataManager.loginUser(myMessage.getHeader().getSendFrom(), clientOut);
         sendMessage();
     }
 

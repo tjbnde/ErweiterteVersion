@@ -29,10 +29,6 @@ public class Server {
 
     // connection to other server for Two-Phase-Commit Protocol
     private String serverHostname;
-    private Socket serverConnection;
-    private ObjectInputStream serverIn;
-    private ObjectOutputStream serverOut;
-
 
     public Server(String hostname, int id) {
         this.hostname = hostname;
