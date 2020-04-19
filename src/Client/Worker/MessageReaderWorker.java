@@ -17,6 +17,8 @@ public class MessageReaderWorker implements Runnable {
      */
     private Message myMessage;
 
+    private Message previousMessage;
+
     /**
      *
      */
@@ -34,6 +36,7 @@ public class MessageReaderWorker implements Runnable {
         this.serverIn = serverIn;
         this.myClient = myClient;
         myMessage = null;
+        previousMessage = null;
         exit = false;
     }
 
@@ -51,18 +54,21 @@ public class MessageReaderWorker implements Runnable {
                 System.err.println(e);
             }
 
-            if(myMessage != null) {
-                if(myMessage.getHeader().isSendSuccessful()) {
-                    myClient.setGlobalLamportCounter(myMessage.getHeader().getLocalLamportCounter());
+            if(previousMessage == null || !previousMessage.getHeader().getMessageId().equals(myMessage.getHeader().getMessageId())) {
+                if (myMessage != null) {
+                    if (myMessage.getHeader().isSendSuccessful()) {
+                        myClient.setGlobalLamportCounter(myMessage.getHeader().getLocalLamportCounter());
 
-                    if (myMessage.getHeader().getSendFrom().equals(myClient.getChat().getUserB())) {
-                        System.out.println();
-                        System.out.println(myMessage.getHeader().getSendFrom() + ": ");
-                        System.out.println(myMessage.getText());
-                        System.out.println();
+                        if (myMessage.getHeader().getSendFrom().equals(myClient.getChat().getUserB())) {
+                            System.out.println();
+                            System.out.println(myMessage.getHeader().getSendFrom() + ": ");
+                            System.out.println(myMessage.getText());
+                            System.out.println();
+                        }
+                    } else {
+                        System.err.println(myMessage.getHeader().getErrrorMessage());
                     }
-                } else {
-                    System.err.println(myMessage.getHeader().getErrrorMessage());
+                    previousMessage = myMessage;
                 }
             }
         }
