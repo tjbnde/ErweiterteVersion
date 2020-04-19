@@ -224,6 +224,8 @@ public class DataManager {
 
     public void commitRegister(Register myRegister) {
         loggedUsers.put(myRegister.getUsername(), null);
+        Client myClient = new Client(myRegister.getUsername(), myRegister.getPassword());
+        registeredUsers.put(myRegister.getUsername(), myClient);
         addUser(myRegister);
     }
 

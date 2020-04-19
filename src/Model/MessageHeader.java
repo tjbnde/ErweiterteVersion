@@ -22,6 +22,8 @@ public class MessageHeader implements Serializable {
 
     private boolean sendSuccessful;
 
+    private String errrorMessage;
+
     // lamport counter for logical order of messages
     private int localLamportCounter;
 
@@ -92,7 +94,19 @@ public class MessageHeader implements Serializable {
         return sendSuccessful;
     }
 
+    public void setSendSuccessful(boolean sendSuccessful) {
+        this.sendSuccessful = sendSuccessful;
+    }
+
     public int getLocalLamportCounter() {
         return localLamportCounter;
+    }
+
+    public String getErrrorMessage() {
+        return errrorMessage;
+    }
+
+    public void setErrrorMessage(String errrorMessage) {
+        this.errrorMessage = errrorMessage;
     }
 }

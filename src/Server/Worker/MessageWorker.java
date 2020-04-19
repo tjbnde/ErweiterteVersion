@@ -32,10 +32,7 @@ public class MessageWorker extends Worker {
 
 
     /**
-     * Startpunkt des Threads
-     * Loggt einen User mit einem zugehörigen Output Stream ein
-     * Sendet eine Nachricht an den bestimmten Empfänger
-     * Springt in eine Endlos Schleife
+     * Start of the Thread. Endless loop where messages from  a client get processed
      *
      * @see Server.DataManager#loginUser(String, ObjectOutputStream)
      */
@@ -52,7 +49,7 @@ public class MessageWorker extends Worker {
 
 
     /**
-     * Prüft ob die Nachricht erfolgreich versendet werden kann mit Hilfe des "Two Phase Commit" Protokolls
+     * Checks if a message can be send with the "Two Phase Commit" protocol
      *
      * @return Wahrheitswert ob die Nachricht erfolgreich versendet werden kann
      * @see Worker#openServerConnection()
@@ -63,12 +60,16 @@ public class MessageWorker extends Worker {
      * @see #readMessageFromOtherServer()
      */
     private boolean twoPhaseCommitMessage() {
-        openServerConnection();
+        if(!openServerConnection()){
+            return false;
+        }
 
         dataManager.writeLogEntry(new Date() + " - preparing message " + (myMessage.getHeader().getMessageId()) + "for committing");
         myMessage.setStatus("PREPARE");
 
-        sendMessageToOtherServer();
+        if(!sendMessageToOtherServer()) {
+            return false;
+        }
 
         if (!dataManager.messageCanBeCommited(myMessage)) {
             dataManager.writeLogEntry(new Date() + " - message " + myMessage.getHeader().getMessageId() + " can not be committed");
@@ -78,7 +79,9 @@ public class MessageWorker extends Worker {
             return false;
         }
 
-        readMessageFromOtherServer();
+        if(!readMessageFromOtherServer()){
+            return false;
+        }
 
         if(myMessage.getStatus().equals("ABORT")) {
             dataManager.writeLogEntry(new Date() + " - set message " + (myMessage.getHeader().getMessageId()) + "ready for aborting");
@@ -92,9 +95,13 @@ public class MessageWorker extends Worker {
             myMessage.setStatus("COMMIT");
         }
 
-        sendMessageToOtherServer();
+        if(!sendMessageToOtherServer()) {
+            return false;
+        }
 
-        readMessageFromOtherServer();
+        if(!readMessageFromOtherServer()){
+            return false;
+        }
 
         closeServerConnection();
 
@@ -110,7 +117,8 @@ public class MessageWorker extends Worker {
      */
     private void sendMessage() {
         if (twoPhaseCommitMessage()) {
-            dataManager.writeMessage(myMessage);
+            dataManager.commitMessage(myMessage);
+
             ObjectOutputStream clientTo = dataManager.getChatPartnerSocket(myMessage);
             if (clientTo != null) {
                 try {
@@ -136,35 +144,64 @@ public class MessageWorker extends Worker {
                     }
                 }
             }
+            myMessage.getHeader().setSendSuccessful(true);
+        } else {
+            myMessage.getHeader().setSendSuccessful(false);
+        }
+
+        if(!myMessage.getHeader().isSendSuccessful()){
+            try {
+                clientOut.writeObject(myMessage);
+                clientOut.flush();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
         }
     }
 
 
     /**
-     * Liest eine Nachricht vom anderen Server
+     * Reads a message from the other server during the two phase commit protocol
+     *
+     * @return Success of sending
      */
-    private void readMessageFromOtherServer() {
+    private boolean readMessageFromOtherServer() {
         try {
             myMessage = (Message) serverIn.readObject();
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
+            System.out.println("** lost connection to server");
+            myMessage.getHeader().setErrrorMessage("** connection to server failed");
+            return false;
+        } catch (ClassNotFoundException e) {
             System.err.println(e);
+            return false;
         }
+        return true;
     }
 
     /**
-     * Sendet eine Nachricht zum anderen Server
+     * Sends a message to the other server during the two phase commit protocol
+     *
+     * @return Success of sending
      */
-    private void sendMessageToOtherServer() {
+    private boolean sendMessageToOtherServer() {
         try {
             serverOut.writeObject(myMessage);
             serverOut.flush();
         } catch (IOException e) {
-            System.err.println(e);
+            System.out.println("** lost connection to server");
+            myMessage.getHeader().setErrrorMessage("** connection to server failed");
+            return false;
         }
+        return true;
     }
 
 
-
+    /**
+     * Starts a connection to the message writer thread of the other server
+     *
+     * @see MessageWriterWorker
+     */
     void openServerConnectionToWriterServer() {
         try {
             connectionToWriterServer = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("messageWriterPort")));

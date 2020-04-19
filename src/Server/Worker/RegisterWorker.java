@@ -15,10 +15,7 @@ public class RegisterWorker extends Worker {
     }
 
     /**
-     * Startpunkt des Threads
-     * Prüft ob eine Registrierung erfolgreich ist
-     * Sendet das Ergebnis an den Client zurück
-     * Loggt einen Benutzer ein wenn die Registrierung erfolgreich ist
+     * Start of the thread. Processes client command to register
      *
      * @see #twoPhaseCommitRegister() ()
      * @see Server.DataManager#addUser(Register)
@@ -28,9 +25,8 @@ public class RegisterWorker extends Worker {
      */
     public void run() {
         if (twoPhaseCommitRegister()) {
-            dataManager.addUser(myRegister);
             myRegister.setSuccessful(true);
-            dataManager.loginUser(myRegister.getUsername(), null);
+            dataManager.commitRegister(myRegister);
             dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " successful");
         } else {
             myRegister.setSuccessful(false);
@@ -41,7 +37,10 @@ public class RegisterWorker extends Worker {
             clientOut.writeObject(myRegister);
             clientOut.flush();
         } catch (IOException e) {
-            System.err.println(e);
+            System.err.println("** lost connection to client");
+            if(myRegister.isSuccessful()) {
+                dataManager.abortRegister(myRegister);
+            }
         } finally {
             closeClientConnection();
         }
@@ -49,9 +48,9 @@ public class RegisterWorker extends Worker {
 
 
     /**
-     * Prüft ob eine Registrierung erfolgreich durchgeführt werden kann mit Hilfe des "Two Phase Commit" Protokolls
+     * Checks if a registration is successful with the "Two Phase Commit" protocol
      *
-     * @return Wahrheitswert ob die Registrierung erfolgreich durchgeführt werden kann
+     * @return Success of registration
      * @see Worker#openServerConnection()
      * @see Server.DataManager#writeLogEntry(String)
      * @see #sendRegisterToOtherServer() () ()
@@ -60,11 +59,17 @@ public class RegisterWorker extends Worker {
      * @see Worker#closeServerConnection()
      */
     private boolean twoPhaseCommitRegister() {
-        openServerConnection();
+        if (!openServerConnection()) {
+            myRegister.setErrorMessage("** connection to server failed");
+            return false;
+        }
 
         dataManager.writeLogEntry(new Date() + " - preparing commit of register for user " + (myRegister.getUsername()));
         myRegister.setStatus("PREPARE");
-        sendRegisterToOtherServer();
+
+        if (!sendRegisterToOtherServer()) {
+            return false;
+        }
 
         if (!dataManager.registerCanBeCommited(myRegister)) {
             dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " can not be commited - username is already taken");
@@ -74,9 +79,11 @@ public class RegisterWorker extends Worker {
             return false;
         }
 
-        readRegisterFromOtherServer();
+        if (!readRegisterFromOtherServer()) {
+            return false;
+        }
 
-        if(myRegister.getStatus().equals("ABORT")) {
+        if (myRegister.getStatus().equals("ABORT")) {
             myRegister.setStatus("ABORT");
             dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " can not be commited");
             sendRegisterToOtherServer();
@@ -89,9 +96,13 @@ public class RegisterWorker extends Worker {
             dataManager.writeLogEntry(new Date() + " - register for user " + myRegister.getUsername() + " can be commited");
         }
 
-        sendRegisterToOtherServer();
+        if (!sendRegisterToOtherServer()) {
+            return false;
+        }
 
-        readRegisterFromOtherServer();
+        if (!readRegisterFromOtherServer()) {
+            return false;
+        }
 
         closeServerConnection();
 
@@ -99,26 +110,39 @@ public class RegisterWorker extends Worker {
     }
 
     /**
-     * Liest eine Registrierung vom anderen Server
+     * Reads a registration from the other server during the two phase commit protocol
+     *
+     * @return Success of sending
      */
-    private void readRegisterFromOtherServer() {
+    private boolean readRegisterFromOtherServer() {
         try {
             myRegister = (Register) serverIn.readObject();
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
+            System.out.println("** lost connection to server");
+            myRegister.setErrorMessage("** connection to server failed");
+            return false;
+        } catch (ClassNotFoundException e) {
             System.err.println(e);
+            return false;
         }
+        return true;
     }
 
     /**
-     * Sendet eine Registrierung zum anderen Server
+     * Sends a registration to the other server during the two phase commit protocol
+     *
+     * @return Success of sending
      */
-    private void sendRegisterToOtherServer() {
+    private boolean sendRegisterToOtherServer() {
         try {
             serverOut.writeObject(myRegister);
             serverOut.flush();
         } catch (IOException e) {
-            System.err.println(e);
+            System.out.println("** lost connection to server");
+            myRegister.setErrorMessage("** connection to server failed");
+            return false;
         }
+        return true;
     }
 
 

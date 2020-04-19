@@ -9,15 +9,16 @@ import java.util.Date;
 
 public class LoginWorker extends Worker {
     private Login myLogin;
-    
+
     /**
      * Konstruktor der Klasse
+     *
      * @param dataManager Datenmanager
-     * @param clientOut Output Stream zum Client
-     * @param clientIn Input Stream vom Client
-     * @param hostname Hostname vom anderen Server
-     * @param myLogin Zu verarbeitender Login
-     * @see Worker#Worker(DataManager, ObjectOutputStream, ObjectInputStream, String) 
+     * @param clientOut   Output Stream zum Client
+     * @param clientIn    Input Stream vom Client
+     * @param hostname    Hostname vom anderen Server
+     * @param myLogin     Zu verarbeitender Login
+     * @see Worker#Worker(DataManager, ObjectOutputStream, ObjectInputStream, String)
      */
     public LoginWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname, Login myLogin) {
         super(dataManager, clientOut, clientIn, hostname);
@@ -25,20 +26,18 @@ public class LoginWorker extends Worker {
     }
 
     /**
-     * Startpunkt des Threads
-     * Prüft ob ein Login erfolgreich ist
-     * Sendet das Ergebnis an den Client zurück
-     * Loggt einen Benutzer ein wenn der Login erfolgreich ist
+     * Start of the thread. Processes client command to login
      *
      * @see #twoPhaseCommitLogin()
      * @see Server.DataManager#loginUser(Login, ObjectOutputStream)
      * @see Server.DataManager#writeLogEntry(String)
+     * @see DataManager#abortLogin(Login)
      * @see Worker#closeClientConnection()
      */
     public void run() {
         if (twoPhaseCommitLogin()) {
             myLogin.setSuccessful(true);
-            dataManager.loginUser(myLogin, null);
+            dataManager.commitLogin(myLogin);
             dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " successful");
         } else {
             myLogin.setSuccessful(false);
@@ -49,7 +48,10 @@ public class LoginWorker extends Worker {
             clientOut.writeObject(myLogin);
             clientOut.flush();
         } catch (IOException e) {
-            System.err.println(e);
+            System.err.println("** lost connection to client");
+            if (myLogin.isSuccessful()) {
+                dataManager.abortLogin(myLogin);
+            }
         } finally {
             closeClientConnection();
         }
@@ -57,9 +59,9 @@ public class LoginWorker extends Worker {
 
 
     /**
-     * Prüft ob ein Login erfolgreich durchgeführt werden kann mit Hilfe des "Two Phase Commit" Protokolls
+     * Checks if a login is successful with the  "Two Phase Commit" protocol
      *
-     * @return Wahrheitswert ob der Login erfolgreich durchgeführt werden kann
+     * @return Success of login
      * @see Worker#openServerConnection()
      * @see Server.DataManager#writeLogEntry(String)
      * @see #sendLoginToOtherServer() ()
@@ -68,11 +70,18 @@ public class LoginWorker extends Worker {
      * @see Worker#closeServerConnection()
      */
     private boolean twoPhaseCommitLogin() {
-        openServerConnection();
+        if(!openServerConnection()){
+            myLogin.setErrorMessage("** connection to server failed");
+            return false;
+        }
 
         dataManager.writeLogEntry(new Date() + " - preparing commit of login for user " + myLogin.getUsername());
         myLogin.setStatus("PREPARE");
-        sendLoginToOtherServer();
+
+        if(!sendLoginToOtherServer()) {
+            return false;
+        }
+
 
         if (!dataManager.loginCanBeCommited(myLogin)) {
             dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can not be commited - wrong username or password");
@@ -82,7 +91,9 @@ public class LoginWorker extends Worker {
             return false;
         }
 
-        readLoginFromOtherServer();
+        if(!readLoginFromOtherServer()) {
+            return false;
+        }
 
         if (myLogin.getStatus().equals("ABORT")) {
             myLogin.setStatus("ABORT");
@@ -97,9 +108,13 @@ public class LoginWorker extends Worker {
             dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " can be commited");
         }
 
-        sendLoginToOtherServer();
+        if(!sendLoginToOtherServer()) {
+            return false;
+        }
 
-        readLoginFromOtherServer();
+        if(!readLoginFromOtherServer()) {
+            return false;
+        }
 
         closeServerConnection();
 
@@ -108,25 +123,39 @@ public class LoginWorker extends Worker {
 
 
     /**
-     * Liest einen Login vom anderen Server
+     * Reads a login from other server during two phase commit protocol
+     *
+     * @return Success of sending
      */
-    private void readLoginFromOtherServer() {
+    private boolean readLoginFromOtherServer() {
         try {
             myLogin = (Login) serverIn.readObject();
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
+            System.err.println("** lost connection to server");
+            myLogin.setErrorMessage("** connection to server failed");
+            return false;
+        } catch (ClassNotFoundException e) {
             System.err.println(e);
+            return false;
         }
+        return true;
     }
 
     /**
-     * Sendet einen Login zum anderen Server
+     * Sends a login to the other server during two phase commit protocol
+     *
+     * @return Success of sending
      */
-    private void sendLoginToOtherServer() {
+    private boolean sendLoginToOtherServer() {
         try {
             serverOut.writeObject(myLogin);
             serverOut.flush();
         } catch (IOException e) {
-            System.err.println(e);
+            System.err.println("** lost connection to server");
+            myLogin.setErrorMessage("** connection to server failed");
+            return false;
         }
+
+        return true;
     }
 }

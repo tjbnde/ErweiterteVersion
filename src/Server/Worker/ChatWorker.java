@@ -1,11 +1,9 @@
 package Server.Worker;
 
 import Model.Chat;
-import Model.Message;
 import Server.DataManager;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.Date;
 
 public class ChatWorker extends Worker {
@@ -17,15 +15,14 @@ public class ChatWorker extends Worker {
     }
 
     /**
-     * Startpunkt des Threads
-     * Prüft ob einem Chat erfolgreich beigetreten werden kann
-     * Sendet das Ergebnis an den Client zurück
+     * Start of the thread. Processes client command to join a chat
      *
      * @see #twoPhaseCommitChat()
      * @see Server.DataManager#chatExists(Chat)
      * @see Server.DataManager#returnChatMessages(Chat)
      * @see Server.DataManager#addChat(Chat)
      * @see Server.DataManager#writeLogEntry(String)
+     * @see DataManager#abortChat(Chat)
      * @see Worker#closeClientConnection()
      */
     public void run() {
@@ -33,13 +30,7 @@ public class ChatWorker extends Worker {
             myChat.setSuccessful(true);
             dataManager.writeLogEntry(new Date() + " - user " + myChat.getUserA() + "joined chat " + myChat.getChatId() + " successful");
             dataManager.loginUser(myChat.getUserA(), clientOut);
-
-            if (dataManager.chatExists(myChat)) {
-                ArrayList<Message> messages = dataManager.returnChatMessages(myChat);
-                myChat.setMessages(messages);
-            } else {
-                dataManager.addChat(myChat);
-            }
+            dataManager.commitChat(myChat);
         } else {
             myChat.setSuccessful(false);
             dataManager.writeLogEntry(new Date() + " - user " + myChat.getUserA() + "joined chat " + myChat.getChatId() + " not successful");
@@ -49,9 +40,12 @@ public class ChatWorker extends Worker {
             clientOut.writeObject(myChat);
             clientOut.flush();
         } catch (IOException e) {
-            System.err.println(e);
+            System.err.println("** lost connection to client");
+            if(myChat.isSuccessful()) {
+                dataManager.abortChat(myChat);
+            }
         } finally {
-            if(!myChat.isSuccessful()) {
+            if (!myChat.isSuccessful()) {
                 closeClientConnection();
             } else {
                 MessageWorker myMessageWorker = new MessageWorker(dataManager, clientOut, clientIn, hostname);
@@ -62,9 +56,9 @@ public class ChatWorker extends Worker {
     }
 
     /**
-     * Prüft ob dem Chat erfolgreich beigetreten werden kann mit Hilfe des "Two Phase Commit" Protokolls
+     * Checks if a chat can be joined with the "Two Phase Commit" protocol
      *
-     * @return Wahrheitswert ob dem Chat erfolgreich beigetreten werden kann
+     * @return Success of join
      * @see Worker#openServerConnection()
      * @see Server.DataManager#writeLogEntry(String)
      * @see #sendChatToOtherServer()
@@ -73,11 +67,17 @@ public class ChatWorker extends Worker {
      * @see Worker#closeServerConnection()
      */
     private boolean twoPhaseCommitChat() {
-        openServerConnection();
+        if (!openServerConnection()) {
+            myChat.setErrorMessage("** connection to server failed");
+            return false;
+        }
 
         dataManager.writeLogEntry(new Date() + " - preparing commit for user  " + myChat.getUserA() + " to join chat " + myChat.getChatId());
         myChat.setStatus("PREPARE");
-        sendChatToOtherServer();
+
+        if (!sendChatToOtherServer()) {
+            return false;
+        }
 
         if (!dataManager.chatCanBeCommited(myChat)) {
             dataManager.writeLogEntry(new Date() + " - user " + myChat.getUserA() + " joining " + myChat.getChatId() + " can not be commited");
@@ -87,9 +87,11 @@ public class ChatWorker extends Worker {
             return false;
         }
 
-        readChatFromOtherServer();
+        if (!readChatFromOtherServer()) {
+            return false;
+        }
 
-        if(myChat.getStatus().equals("ABORT")) {
+        if (myChat.getStatus().equals("ABORT")) {
             myChat.setStatus("ABORT");
             dataManager.writeLogEntry(new Date() + " - user " + myChat.getUserA() + " joining " + myChat.getChatId() + " can not be commited");
             sendChatToOtherServer();
@@ -102,9 +104,13 @@ public class ChatWorker extends Worker {
             dataManager.writeLogEntry(new Date() + " - user " + myChat.getUserA() + " joining " + myChat.getChatId() + " can be commited");
         }
 
-        sendChatToOtherServer();
+        if (!sendChatToOtherServer()) {
+            return false;
+        }
 
-        readChatFromOtherServer();
+        if (!readChatFromOtherServer()) {
+            return false;
+        }
 
         closeServerConnection();
 
@@ -112,30 +118,39 @@ public class ChatWorker extends Worker {
     }
 
     /**
-     * Liest einen Chat vom anderen Server
+     * Reads a chat from the other server during two phase commit protocol
+     *
+     * @return Success of sending
      */
-    private void readChatFromOtherServer() {
+    private boolean readChatFromOtherServer() {
         try {
             myChat = (Chat) serverIn.readObject();
-        } catch (IOException  e) {
+        } catch (IOException e) {
             System.out.println("** lost connection to server");
-            System.out.println("** trying to reconnect");
+            myChat.setErrorMessage("** connection to server failed");
+            return false;
         } catch (ClassNotFoundException e) {
             System.err.println(e);
+            return false;
         }
+        return true;
     }
 
     /**
-     * Sendet einen Chat zum anderen Server
+     * Sends a chat to the other server during two phase commit protocol
+     *
+     * @return Success of sending
      */
-    private void sendChatToOtherServer() {
+    private boolean sendChatToOtherServer() {
         try {
             serverOut.writeObject(myChat);
             serverOut.flush();
         } catch (IOException e) {
             System.out.println("** lost connection to server");
-            System.out.println("** trying to reconnect");
+            myChat.setErrorMessage("** connection to server failed");
+            return false;
         }
+        return true;
     }
 
 

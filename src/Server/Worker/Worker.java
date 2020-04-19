@@ -19,10 +19,11 @@ public abstract class Worker implements Runnable {
 
     /**
      * Konstrukter der Klasse
+     *
      * @param dataManager Datenmanager
-     * @param clientOut Output Stream zum Client
-     * @param clientIn Input Stream zum Client
-     * @param hostname Hostname vom anderen Server
+     * @param clientOut   Output Stream zum Client
+     * @param clientIn    Input Stream zum Client
+     * @param hostname    Hostname vom anderen Server
      */
     public Worker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname) {
         this.clientOut = clientOut;
@@ -34,38 +35,20 @@ public abstract class Worker implements Runnable {
         serverOut = null;
     }
 
-    void openServerConnection() {
+    boolean openServerConnection() {
         try {
             serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
+            OutputStream outputStream = serverConnection.getOutputStream();
+            serverOut = new ObjectOutputStream(outputStream);
+            InputStream inputStream = serverConnection.getInputStream();
+            serverIn = new ObjectInputStream(inputStream);
         } catch (IOException e) {
             System.err.println("** connection to server failed");
-            System.err.println("** trying to reconnect");
+            return false;
         }
-
-        if (serverConnection != null) {
-            try {
-                OutputStream outputStream = serverConnection.getOutputStream();
-                serverOut = new ObjectOutputStream(outputStream);
-                InputStream inputStream = serverConnection.getInputStream();
-                serverIn = new ObjectInputStream(inputStream);
-            } catch (IOException e) {
-                System.err.println("** lost connection to server");
-                System.err.println("** trying to reconnect");
-                restartConnection();
-            }
-        } else {
-            restartConnection();
-        }
+        return true;
     }
 
-    private void restartConnection() {
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            System.err.println(e);
-        }
-        openServerConnection();
-    }
 
     void closeServerConnection() {
         if (serverConnection != null) {
