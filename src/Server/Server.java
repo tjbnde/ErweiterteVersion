@@ -7,7 +7,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class Server implements Runnable{
+public class Server {
     // id for identification between servers
     private int id;
 
@@ -68,8 +68,8 @@ public class Server implements Runnable{
         }
     }
 
-    @Override
-    public void run() {
+    public void start() {
+
         while (true) {
             try {
                 connection = server.accept();
@@ -119,4 +119,5 @@ public class Server implements Runnable{
         }
         return t;
     }
+
 }
