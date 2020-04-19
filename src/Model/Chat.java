@@ -23,7 +23,10 @@ public class Chat implements Serializable {
 
     // messages of the chat
     private ArrayList<Message> messages;
+
     private boolean successful;
+
+    private boolean newCreated;
 
     public Chat(String userA, String userB) {
         this.userA = userA;
@@ -32,6 +35,7 @@ public class Chat implements Serializable {
         errorMessage = "";
         messages = new ArrayList<>();
         successful = false;
+        newCreated = false;
     }
 
     public Chat(String chatId, String userA, String userB) {
@@ -41,6 +45,7 @@ public class Chat implements Serializable {
         errorMessage = "";
         messages = new ArrayList<>();
         successful = false;
+        newCreated = false;
     }
 
     // generates unique chatId, as every username is unique
@@ -93,5 +98,13 @@ public class Chat implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public boolean isNewCreated() {
+        return newCreated;
+    }
+
+    public void setNewCreated(boolean newCreated) {
+        this.newCreated = newCreated;
     }
 }

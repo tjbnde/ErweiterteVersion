@@ -117,7 +117,10 @@ public class ChatWorker extends Worker {
     private void readChatFromOtherServer() {
         try {
             myChat = (Chat) serverIn.readObject();
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException  e) {
+            System.out.println("** lost connection to server");
+            System.out.println("** trying to reconnect");
+        } catch (ClassNotFoundException e) {
             System.err.println(e);
         }
     }
@@ -130,7 +133,8 @@ public class ChatWorker extends Worker {
             serverOut.writeObject(myChat);
             serverOut.flush();
         } catch (IOException e) {
-            System.err.println(e);
+            System.out.println("** lost connection to server");
+            System.out.println("** trying to reconnect");
         }
     }
 

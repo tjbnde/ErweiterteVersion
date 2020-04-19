@@ -30,7 +30,7 @@ public class DataManager {
         properties = new Properties();
 
         try {
-            FileInputStream propertiesInputStream = new FileInputStream("config.properties") ;
+            FileInputStream propertiesInputStream = new FileInputStream("config.properties");
             properties.load(propertiesInputStream);
         } catch (IOException e) {
             System.err.println(e);
@@ -104,13 +104,6 @@ public class DataManager {
         }
     }
 
-    public void abortLogin(Login myLogin) {
-        // TODO
-    }
-
-    public void abortRegister(Register myRegister) {
-        // TODO
-    }
 
     private void readChats() {
         try {
@@ -120,7 +113,7 @@ public class DataManager {
                 String[] chatData = data.split(";");
                 String chatID = chatData[0];
                 ArrayList<Message> messages;
-                if(existingChatList.containsKey(chatID)) {
+                if (existingChatList.containsKey(chatID)) {
                     messages = existingChatList.get(chatID).getMessages();
                 } else {
                     messages = new ArrayList<>();
@@ -133,8 +126,8 @@ public class DataManager {
                     String lamportCounter = messageData[3];
                     String sendSuccessfull = messageData[4];
                     String timeSend = messageData[5];
-
                     String text = messageData[6];
+
                     Message myMessage = new Message(messageID, sendFrom, sendTo, lamportCounter, sendSuccessfull, timeSend, text);
                     messages.add(myMessage);
                 }
@@ -176,7 +169,7 @@ public class DataManager {
                 String data = chatFileReader.nextLine();
                 String[] chatData = data.split(";");
                 String chatID = chatData[0];
-                if(chatID.equals(userA + userB) || chatID.equals(userB + userA)) {
+                if (chatID.equals(userA + userB) || chatID.equals(userB + userA)) {
                     data += ";" + myMessage.toString();
                 }
                 data += "\n";
@@ -184,7 +177,7 @@ public class DataManager {
             }
             FileWriter writer = new FileWriter(chatFile, false);
             Iterator<String> i = lines.iterator();
-            while(i.hasNext()) {
+            while (i.hasNext()) {
                 writer.write(i.next());
             }
             writer.close();
@@ -208,11 +201,11 @@ public class DataManager {
     }
 
     public boolean chatCanBeCommited(Chat myChat) {
-        if(myChat.getUserA().equals(myChat.getUserB())) {
+        if (myChat.getUserA().equals(myChat.getUserB())) {
             myChat.setErrorMessage("** you can't send messages to yourself");
             return false;
         }
-        if(!userIsRegistered(myChat.getUserB())) {
+        if (!userIsRegistered(myChat.getUserB())) {
             myChat.setErrorMessage("** user \"" + myChat.getUserB() + "\" is not registered");
             return false;
         }
@@ -222,6 +215,7 @@ public class DataManager {
 
     /**
      * Schnittstelle die vom TwoPhaseCommitWorker aufgerufen wird
+     *
      * @param myLogin Referent für Login der commited wird
      */
     public void commitLogin(Login myLogin) {
@@ -241,8 +235,10 @@ public class DataManager {
         if (chatExists(myChat)) {
             ArrayList<Message> messages = returnChatMessages(myChat);
             myChat.setMessages(messages);
+            myChat.setNewCreated(false);
         } else {
             addChat(myChat);
+            myChat.setNewCreated(true);
         }
     }
 
@@ -251,13 +247,149 @@ public class DataManager {
         loggedUsers.put(myLogin.getUsername(), clientOut);
     }
 
+    public void abortLogin(Login myLogin) {
+        loggedUsers.remove(myLogin.getUsername());
+    }
+
+    public void abortRegister(Register myRegister) {
+        ArrayList<String> bufferedUsers = new ArrayList<>();
+
+        loggedUsers.remove(myRegister.getUsername());
+        registeredUsers.remove(myRegister.getUsername());
+
+        // read all registered users and filter the new one
+        try {
+            Scanner userFileReader = new Scanner(userFile);
+            while (userFileReader.hasNextLine()) {
+                String data = userFileReader.nextLine();
+                String[] userData = data.split(";");
+                String username = userData[0];
+                if (!username.equals(myRegister.getUsername())) {
+                    bufferedUsers.add(data);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.err.println(e);
+        }
+
+        // write filtered users back into user file
+        try {
+            FileWriter writer = new FileWriter(userFile, false);
+            for (String user : bufferedUsers) {
+                writer.write(user);
+            }
+            writer.close();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+
+
+    }
 
     public void abortMessage(Message myMessage) {
-        // TODO
+        ArrayList<String> bufferedChats = new ArrayList<>();
+        String userA = myMessage.getHeader().getSendFrom();
+        String userB = myMessage.getHeader().getSendTo();
+
+        // read all chats and filter the one where the message appears
+        try {
+            Scanner chatFileReader = new Scanner(chatFile);
+            while (chatFileReader.hasNextLine()) {
+                String data = chatFileReader.nextLine();
+                String[] chatData = data.split(";");
+                String chatID = chatData[0];
+                if (chatID.equals(userA + userB) || chatID.equals(userB + userA)) {
+                    StringBuilder newChat = new StringBuilder();
+                    // read all messages from filtered chat and filter the new one
+                    for (int i = 1; i < chatData.length; i++) {
+                        String[] messageData = chatData[i].split("#%#");
+                        String messageID = messageData[0];
+                        if (!messageID.equals(myMessage.getHeader().getMessageId().toString())) {
+                            newChat.append(chatData[i]);
+                        }
+                    }
+                    newChat.append("\n");
+                    bufferedChats.add(newChat.toString());
+                } else {
+                    bufferedChats.add(data);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+
+        // write all chats back into chat file
+        try {
+            FileWriter chatFileWriter = new FileWriter(chatFile, false);
+            for (String chat : bufferedChats) {
+                chatFileWriter.write(chat);
+            }
+            chatFileWriter.close();
+        } catch (IOException e){
+            System.err.println(e);
+        }
+        readChats();
     }
 
     public void abortChat(Chat myChat) {
-        // TODO
+        if (myChat.isNewCreated()) {
+            ArrayList<String> bufferedChats = new ArrayList<>();
+            ArrayList<String> bufferedChatList = new ArrayList<>();
+
+            existingChatList.remove(myChat.getChatId());
+
+            // read all existing chats and filter the new one
+            try {
+                Scanner chatFileReader = new Scanner(chatFile);
+                while (chatFileReader.hasNextLine()) {
+                    String data = chatFileReader.nextLine();
+                    String[] chatData = data.split(";");
+                    String chatID = chatData[0];
+                    if (!chatID.equals(myChat.getChatId())) {
+                        bufferedChats.add(data);
+                    }
+                }
+            } catch (FileNotFoundException e) {
+                System.err.println(e);
+            }
+
+            // read all existing chat list entries and filter the new one
+            try {
+                Scanner chatListFileReader = new Scanner(chatListFile);
+                while (chatListFileReader.hasNextLine()) {
+                    String data = chatListFileReader.nextLine();
+                    String[] chatData = data.split(";");
+                    String chatID = chatData[0];
+                    if (!chatID.equals(myChat.getChatId())) {
+                        bufferedChatList.add(data);
+                    }
+                }
+            } catch (FileNotFoundException e) {
+                System.err.println(e);
+            }
+
+            // write filtered chats back into the chat file
+            try {
+                FileWriter chatWriter = new FileWriter(chatFile, false);
+                for (String chat : bufferedChats) {
+                    chatWriter.write(chat);
+                }
+                chatWriter.close();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
+
+            // write filtered chat list entries back into the chatList file
+            try {
+                FileWriter chatListWriter = new FileWriter(chatListFile, false);
+                for (String chatListEntry : bufferedChatList) {
+                    chatListWriter.write(chatListEntry);
+                }
+                chatListWriter.close();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
+        }
     }
 
     public void writeLogEntry(String logEntry) {
@@ -268,7 +400,7 @@ public class DataManager {
         } catch (IOException e) {
             System.err.println(e);
         } finally {
-            if(writer != null) {
+            if (writer != null) {
                 try {
                     writer.close();
                 } catch (IOException e) {

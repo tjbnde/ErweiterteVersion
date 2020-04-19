@@ -37,13 +37,34 @@ public abstract class Worker implements Runnable {
     void openServerConnection() {
         try {
             serverConnection = new Socket(InetAddress.getByName(hostname), Integer.parseInt(dataManager.getProperties().getProperty("twoPhaseCommitPort")));
-            InputStream inputStream = serverConnection.getInputStream();
-            serverIn = new ObjectInputStream(inputStream);
-            OutputStream outputStream = serverConnection.getOutputStream();
-            serverOut = new ObjectOutputStream(outputStream);
         } catch (IOException e) {
+            System.err.println("** connection to server failed");
+            System.err.println("** trying to reconnect");
+        }
+
+        if (serverConnection != null) {
+            try {
+                OutputStream outputStream = serverConnection.getOutputStream();
+                serverOut = new ObjectOutputStream(outputStream);
+                InputStream inputStream = serverConnection.getInputStream();
+                serverIn = new ObjectInputStream(inputStream);
+            } catch (IOException e) {
+                System.err.println("** lost connection to server");
+                System.err.println("** trying to reconnect");
+                restartConnection();
+            }
+        } else {
+            restartConnection();
+        }
+    }
+
+    private void restartConnection() {
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
             System.err.println(e);
         }
+        openServerConnection();
     }
 
     void closeServerConnection() {

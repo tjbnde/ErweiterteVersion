@@ -288,6 +288,7 @@ public class Client {
                 System.err.println("** trying to reconnect");
                 t.interrupt();
                 sendMessage(myMessage);
+                return;
             }
         }
     }
