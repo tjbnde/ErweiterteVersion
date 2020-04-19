@@ -10,6 +10,7 @@ import java.util.Date;
 
 public class MessageWorker extends Worker {
     private Message myMessage;
+    private Message previousMessage;
 
     private Socket connectionToWriterServer;
     private ObjectOutputStream writerOut;
@@ -17,6 +18,7 @@ public class MessageWorker extends Worker {
     public MessageWorker(DataManager dataManager, ObjectOutputStream clientOut, ObjectInputStream clientIn, String hostname) {
         super(dataManager, clientOut, clientIn, hostname);
         myMessage = null;
+        previousMessage = null;
         connectionToWriterServer = null;
         writerOut = null;
 
@@ -116,37 +118,39 @@ public class MessageWorker extends Worker {
      * @see #openServerConnection()
      */
     private void sendMessage() {
-        if (twoPhaseCommitMessage()) {
-            dataManager.commitMessage(myMessage);
-
-            ObjectOutputStream clientTo = dataManager.getChatPartnerSocket(myMessage);
-            if (clientTo != null) {
-                try {
-                    clientTo.writeObject(myMessage);
-                    clientTo.flush();
-                } catch (IOException e) {
-                    System.err.println(e);
-                }
-            } else {
-                openServerConnectionToWriterServer();
-                try {
-                    writerOut.writeObject(myMessage);
-                    writerOut.flush();
-                } catch (IOException e) {
-                    System.err.println(e);
-                } finally {
-                    if (connectionToWriterServer != null) {
-                        try {
-                            connectionToWriterServer.close();
-                        } catch (IOException e) {
-                            System.err.println(e);
+        if(previousMessage == null || !previousMessage.getHeader().getMessageId().equals(myMessage.getHeader().getMessageId())) {
+            if (twoPhaseCommitMessage()) {
+                dataManager.commitMessage(myMessage);
+                myMessage.getHeader().setSendSuccessful(true);
+                ObjectOutputStream clientTo = dataManager.getChatPartnerSocket(myMessage);
+                if (clientTo != null) {
+                    try {
+                        clientTo.writeObject(myMessage);
+                        clientTo.flush();
+                    } catch (IOException e) {
+                        System.err.println(e);
+                    }
+                } else {
+                    openServerConnectionToWriterServer();
+                    try {
+                        writerOut.writeObject(myMessage);
+                        writerOut.flush();
+                    } catch (IOException e) {
+                        System.err.println(e);
+                    } finally {
+                        if (connectionToWriterServer != null) {
+                            try {
+                                connectionToWriterServer.close();
+                            } catch (IOException e) {
+                                System.err.println(e);
+                            }
                         }
                     }
                 }
+
+            } else {
+                myMessage.getHeader().setSendSuccessful(false);
             }
-            myMessage.getHeader().setSendSuccessful(true);
-        } else {
-            myMessage.getHeader().setSendSuccessful(false);
         }
 
         if(!myMessage.getHeader().isSendSuccessful()){
@@ -156,6 +160,8 @@ public class MessageWorker extends Worker {
             } catch (IOException e) {
                 System.err.println(e);
             }
+        } else {
+            previousMessage = myMessage;
         }
     }
 
