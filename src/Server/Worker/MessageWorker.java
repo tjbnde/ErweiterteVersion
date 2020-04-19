@@ -67,6 +67,7 @@ public class MessageWorker extends Worker {
      */
     private boolean twoPhaseCommitMessage() {
         if(!openServerConnection()){
+            myMessage.getHeader().setErrrorMessage("** connection to server failed");
             return false;
         }
 

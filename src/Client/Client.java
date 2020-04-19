@@ -281,9 +281,6 @@ public class Client {
             try {
                 serverOut.writeObject(myMessage);
                 serverOut.flush();
-                System.out.println(username + ": ");
-                System.out.println(messageText);
-                System.out.println();
             } catch (IOException e) {
                 System.err.println("** lost connection to server");
                 System.err.println("** trying to reconnect");
