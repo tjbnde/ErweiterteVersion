@@ -265,7 +265,7 @@ public class DataManager {
                 String[] userData = data.split(";");
                 String username = userData[0];
                 if (!username.equals(myRegister.getUsername())) {
-                    bufferedUsers.add(data);
+                    bufferedUsers.add(data + "\n");
                 }
             }
         } catch (FileNotFoundException e) {
@@ -311,7 +311,7 @@ public class DataManager {
                     newChat.append("\n");
                     bufferedChats.add(newChat.toString());
                 } else {
-                    bufferedChats.add(data);
+                    bufferedChats.add(data + "\n");
                 }
             }
         } catch (IOException e) {
@@ -346,7 +346,7 @@ public class DataManager {
                     String[] chatData = data.split(";");
                     String chatID = chatData[0];
                     if (!chatID.equals(myChat.getChatId())) {
-                        bufferedChats.add(data);
+                        bufferedChats.add(data + "\n");
                     }
                 }
             } catch (FileNotFoundException e) {
@@ -361,7 +361,7 @@ public class DataManager {
                     String[] chatData = data.split(";");
                     String chatID = chatData[0];
                     if (!chatID.equals(myChat.getChatId())) {
-                        bufferedChatList.add(data);
+                        bufferedChatList.add(data + "\n");
                     }
                 }
             } catch (FileNotFoundException e) {

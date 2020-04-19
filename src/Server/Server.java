@@ -7,7 +7,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class Server {
+public class Server implements Runnable{
     // id for identification between servers
     private int id;
 
@@ -51,13 +51,9 @@ public class Server {
             Thread twoPhaseCommitThread =  new Thread(twoPhaseCommitWorker);
             twoPhaseCommitThread.start();
 
-            System.out.println("** two phase commit worker started successful");
-
             MessageWriterWorker messageWriterWorker = new MessageWriterWorker(dataManager, messageWriterPort);
             Thread writerThread = new Thread(messageWriterWorker);
             writerThread.start();
-
-            System.out.println("** message writer worker started successful");
 
         } catch (IOException e) {
             System.err.println(e);
@@ -72,8 +68,8 @@ public class Server {
         }
     }
 
-    public void start() {
-
+    @Override
+    public void run() {
         while (true) {
             try {
                 connection = server.accept();
@@ -90,8 +86,16 @@ public class Server {
                 System.err.println(e);
             }
         }
+    }
 
-
+    public void stopServer(){
+        if(server != null) {
+            try {
+                server.close();
+            } catch (IOException e) {
+                System.err.println(e);
+            }
+        }
     }
 
     private Thread processElement(Object nextElement) {
@@ -115,5 +119,4 @@ public class Server {
         }
         return t;
     }
-
 }
