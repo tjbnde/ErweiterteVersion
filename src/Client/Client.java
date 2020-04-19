@@ -389,6 +389,7 @@ public class Client {
         if (myLogin.isSuccessful()) {
             this.username = username;
             this.password = password;
+            this.globalLamportCounter = myLogin.getLocalLamportCounter();
         } else {
             System.err.println(myLogin.getErrorMessage());
             login();
