@@ -51,8 +51,8 @@ public class DataManager {
     public void addUser(Register newRegister) {
         try {
             FileWriter writer = new FileWriter(userFile, true);
-            writer.write(newRegister.getUsername() + ";" + newRegister.getPassword() + "\n");
-            Client newClient = new Client(newRegister.getUsername(), newRegister.getPassword());
+            writer.write(newRegister.getUsername() + ";" + newRegister.getPassword() + ";" + "0\n");
+            Client newClient = new Client(newRegister.getUsername(), newRegister.getPassword(), 0);
             registeredUsers.put(newClient.getUsername(), newClient);
             writer.close();
         } catch (IOException e) {
@@ -79,7 +79,8 @@ public class DataManager {
                 String[] userData = data.split(";");
                 String username = userData[0];
                 String password = userData[1];
-                Client myClient = new Client(username, password);
+                int lamportCounter = Integer.parseInt(userData[2]);
+                Client myClient = new Client(username, password, lamportCounter);
                 registeredUsers.put(myClient.getUsername(), myClient);
             }
         } catch (FileNotFoundException e) {
@@ -224,18 +225,20 @@ public class DataManager {
 
     public void commitRegister(Register myRegister) {
         loggedUsers.put(myRegister.getUsername(), null);
-        Client myClient = new Client(myRegister.getUsername(), myRegister.getPassword());
+        Client myClient = new Client(myRegister.getUsername(), myRegister.getPassword(), 0);
         registeredUsers.put(myRegister.getUsername(), myClient);
         addUser(myRegister);
     }
 
     public void commitMessage(Message myMessage) {
         writeMessage(myMessage);
+        updateLamportCounter(myMessage.getHeader().getSendFrom(), myMessage.getHeader().getLocalLamportCounter());
     }
 
     public void commitChat(Chat myChat) {
         if (chatExists(myChat)) {
             ArrayList<Message> messages = returnChatMessages(myChat);
+            Collections.sort(messages);
             myChat.setMessages(messages);
             myChat.setNewCreated(false);
         } else {
@@ -439,5 +442,42 @@ public class DataManager {
         loggedUsers.put(username, clientOut);
     }
 
+    public void updateLamportCounter(String username, int newCounter) {
+        ArrayList<String> bufferedUsers = new ArrayList<>();
 
+        // read all users and update lamport counter of filtered one
+        try {
+            Scanner userFileReader = new Scanner(userFile);
+            while (userFileReader.hasNextLine()) {
+                String data = userFileReader.nextLine();
+                String[] userData = data.split(";");
+                String usernameData = userData[0];
+                if(username.equals(usernameData)) {
+                    String password = userData[1];
+                    bufferedUsers.add(username + ";" + password + ";" + newCounter + "\n");
+                } else {
+                    bufferedUsers.add(data + "\n");
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.err.println(e);
+        }
+
+        // write updated users back into user file
+        try {
+            FileWriter writer = new FileWriter(userFile, false);
+            for (String user : bufferedUsers) {
+                writer.write(user);
+            }
+            writer.close();
+        } catch (IOException e) {
+            System.err.println(e);
+        }
+
+
+    }
+
+    public HashMap<String, Client> getRegisteredUsers() {
+        return registeredUsers;
+    }
 }

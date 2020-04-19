@@ -70,6 +70,7 @@ public class Client {
     public Client() {
         username = "";
         password = "";
+        globalLamportCounter = 0;
         init();
     }
 
@@ -80,9 +81,10 @@ public class Client {
      * @param password - Password of client
      * @see #init()
      */
-    public Client(String username, String password) {
+    public Client(String username, String password, int globalLamportCounter) {
         this.username = username;
         this.password = password;
+        this.globalLamportCounter = globalLamportCounter;
         init();
     }
 
@@ -93,7 +95,6 @@ public class Client {
         chat = null;
         userInput = new BufferedReader(new InputStreamReader(System.in));
         responsiveServerHostname = "";
-        globalLamportCounter = 0;
 
         Properties properties = new Properties();
         try {
@@ -733,5 +734,9 @@ public class Client {
 
     public String getPassword() {
         return password;
+    }
+
+    public int getGlobalLamportCounter() {
+        return globalLamportCounter;
     }
 }

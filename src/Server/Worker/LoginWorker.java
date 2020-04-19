@@ -36,6 +36,7 @@ public class LoginWorker extends Worker {
      */
     public void run() {
         if (twoPhaseCommitLogin()) {
+            myLogin.setLocalLamportCounter(dataManager.getRegisteredUsers().get(myLogin.getUsername()).getGlobalLamportCounter());
             myLogin.setSuccessful(true);
             dataManager.commitLogin(myLogin);
             dataManager.writeLogEntry(new Date() + " - login for user " + myLogin.getUsername() + " successful");

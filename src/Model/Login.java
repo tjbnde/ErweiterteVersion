@@ -12,6 +12,8 @@ public class Login implements Serializable {
 
     private String status;
 
+    private int localLamportCounter;
+
     public Login(String username, String password) {
         this.username = username;
         this.password = password
@@ -19,6 +21,7 @@ public class Login implements Serializable {
         this.successful = false;
         this.errorMessage = "";
         status = "";
+        localLamportCounter = 0;
     }
 
     public String getStatus() {
@@ -53,5 +56,13 @@ public class Login implements Serializable {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public int getLocalLamportCounter() {
+        return localLamportCounter;
+    }
+
+    public void setLocalLamportCounter(int localLamportCounter) {
+        this.localLamportCounter = localLamportCounter;
     }
 }
