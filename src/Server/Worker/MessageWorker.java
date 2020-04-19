@@ -42,8 +42,12 @@ public class MessageWorker extends Worker {
         while (true) {
             try {
                 myMessage = (Message) clientIn.readObject();
-            } catch (IOException | ClassNotFoundException e) {
+            } catch (IOException e) {
+                System.err.println("** lost connection to client");
+                return;
+            } catch (ClassNotFoundException e) {
                 System.err.println(e);
+                return;
             }
             sendMessage();
         }

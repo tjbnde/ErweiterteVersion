@@ -274,9 +274,9 @@ public class Client {
                 logoutDialog();
             }
 
-
-            Message myMessage = new Message(username, chat.getUserB(), globalLamportCounter, messageText);
             globalLamportCounter++;
+            Message myMessage = new Message(username, chat.getUserB(), globalLamportCounter, messageText);
+
 
             try {
                 serverOut.writeObject(myMessage);
