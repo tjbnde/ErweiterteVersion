@@ -1,2 +1,1 @@
-sinana;sinan;a
-jansinan;jan;sinan
+sinanjan;sinan;jan

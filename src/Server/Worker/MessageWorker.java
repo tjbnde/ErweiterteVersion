@@ -2,6 +2,8 @@ package Server.Worker;
 
 import Model.Message;
 import Server.DataManager;
+import crypto.AES;
+import crypto.AESServer;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -128,6 +130,12 @@ public class MessageWorker extends Worker {
                 dataManager.commitMessage(myMessage);
                 myMessage.getHeader().setSendSuccessful(true);
                 ObjectOutputStream clientTo = dataManager.getChatPartnerSocket(myMessage);
+                try {
+                    myMessage.setText(AESServer.decrypt(myMessage.getText()));
+                    myMessage.setText(AES.encrypt(myMessage.getText()));
+                } catch (Exception e) {
+                    System.err.println(e);
+                }
                 if (clientTo != null) {
                     try {
                         clientTo.writeObject(myMessage);

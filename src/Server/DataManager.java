@@ -5,6 +5,7 @@ import Model.Chat;
 import Model.Login;
 import Model.Message;
 import Model.Register;
+import crypto.AES;
 import crypto.AESServer;
 
 import java.io.*;
@@ -179,7 +180,9 @@ public class DataManager {
                 String chatID = chatData[0];
                 if (chatID.equals(userA + userB) || chatID.equals(userB + userA)) {
                     try {
-                        data += ";" + AESServer.encrypt(myMessage.toString());
+                        myMessage.setText(AES.decrypt(myMessage.getText()));
+                        myMessage.setText(AESServer.encrypt(myMessage.getText()));
+                        data += ";" + myMessage.toString();
                     } catch (Exception e) {
                         System.err.println(e);
                     }

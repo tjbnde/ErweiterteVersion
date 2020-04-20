@@ -10,7 +10,7 @@ import java.util.Base64;
 public class AESServer {
 
     private final static String VECTOR = "0123456701234567"; // 16 chars -> Corresponds to a byte Array with the size 16
-    private final static String KEY = "dasuiwareinflop!"; // 16 chars -> Must be the same length as the block size(=128 Bits/16 Bytes)
+    private final static String KEY = "ldowuthegdnsgdlf"; // 16 chars -> Must be the same length as the block size(=128 Bits/16 Bytes)
     private static Cipher encryption;
     private static Cipher decryption;
 

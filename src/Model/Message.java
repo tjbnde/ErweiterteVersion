@@ -63,5 +63,7 @@ public class Message implements Serializable, Comparable {
         return text;
     }
 
-
+    public void setText(String text) {
+        this.text = text;
+    }
 }

@@ -2,6 +2,8 @@ package Server.Worker;
 
 import Model.Message;
 import Server.DataManager;
+import crypto.AES;
+import crypto.AESServer;
 
 import java.io.*;
 import java.net.ServerSocket;
