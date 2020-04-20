@@ -132,7 +132,6 @@ public class MessageWorker extends Worker {
                 ObjectOutputStream clientTo = dataManager.getChatPartnerSocket(myMessage);
                 try {
                     myMessage.setText(AESServer.decrypt(myMessage.getText()));
-                    myMessage.setText(AES.encrypt(myMessage.getText()));
                 } catch (Exception e) {
                     System.err.println(e);
                 }

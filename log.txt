@@ -1,6 +1,0 @@
-Mon Apr 20 19:39:04 CEST 2020 - testing if login of user sinan is successful
-Mon Apr 20 19:39:04 CEST 2020 - login of user sinan can be committed locally
-Mon Apr 20 19:39:04 CEST 2020 - login of user sinan committed locally
-Mon Apr 20 19:39:07 CEST 2020 - testing if chat sinanjan is successful
-Mon Apr 20 19:39:07 CEST 2020 - chat sinanjan can be committed locally
-Mon Apr 20 19:39:07 CEST 2020 - chat sinanjan committed locally
