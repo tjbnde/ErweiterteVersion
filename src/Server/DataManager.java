@@ -6,7 +6,6 @@ import Model.Login;
 import Model.Message;
 import Model.Register;
 import crypto.AES;
-import crypto.AESServer;
 
 import java.io.*;
 import java.util.*;
@@ -129,15 +128,14 @@ public class DataManager {
                     String lamportCounter = messageData[3];
                     String sendSuccessfull = messageData[4];
                     String timeSend = messageData[5];
-
-                    String text = null;
+                    String text = messageData[6];
+                    String messageText = "";
                     try {
-                        text = AESServer.decrypt(messageData[6]);
+                        messageText = AES.decrypt(text);
                     } catch (Exception e) {
                         System.err.println(e);
                     }
-
-                    Message myMessage = new Message(messageID, sendFrom, sendTo, lamportCounter, sendSuccessfull, timeSend, text);
+                    Message myMessage = new Message(messageID, sendFrom, sendTo, lamportCounter, sendSuccessfull, timeSend, messageText);
                     messages.add(myMessage);
                 }
             }
@@ -179,13 +177,7 @@ public class DataManager {
                 String[] chatData = data.split(";");
                 String chatID = chatData[0];
                 if (chatID.equals(userA + userB) || chatID.equals(userB + userA)) {
-                    try {
-                        myMessage.setText(AES.decrypt(myMessage.getText()));
-                        myMessage.setText(AESServer.encrypt(myMessage.getText()));
-                        data += ";" + myMessage.toString();
-                    } catch (Exception e) {
-                        System.err.println(e);
-                    }
+                    data += ";" + myMessage.toString();
                 }
                 data += "\n";
                 lines.add(data);
@@ -344,7 +336,7 @@ public class DataManager {
                 chatFileWriter.write(chat);
             }
             chatFileWriter.close();
-        } catch (IOException e){
+        } catch (IOException e) {
             System.err.println(e);
         }
         readChats();
@@ -466,7 +458,7 @@ public class DataManager {
                 String data = userFileReader.nextLine();
                 String[] userData = data.split(";");
                 String usernameData = userData[0];
-                if(username.equals(usernameData)) {
+                if (username.equals(usernameData)) {
                     String password = userData[1];
                     bufferedUsers.add(username + ";" + password + ";" + newCounter + "\n");
                 } else {
