@@ -1,0 +1,186 @@
+Mon Apr 20 18:17:20 CEST 2020 - testing if register of user a is successful
+Mon Apr 20 18:17:20 CEST 2020 - register of user a can be committed locally
+Mon Apr 20 18:17:20 CEST 2020 - register of user a committed locally
+Mon Apr 20 18:22:27 CEST 2020 - testing if register of user sinan is successful
+Mon Apr 20 18:22:27 CEST 2020 - register of user sinan can be committed locally
+Mon Apr 20 18:22:27 CEST 2020 - register of user sinan committed locally
+Mon Apr 20 18:23:24 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:23:24 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:23:24 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:24:56 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:24:56 CEST 2020 - login of user sinan can not be committed locally
+Mon Apr 20 18:24:56 CEST 2020 - login of user sinan not committed
+Mon Apr 20 18:25:04 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:25:04 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:25:04 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:25:06 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:25:06 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:25:06 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:29:13 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:29:13 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:29:13 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:29:15 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:29:15 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:29:15 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:31:07 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:31:07 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:31:07 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:31:17 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:31:17 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:31:17 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:32:17 CEST 2020 - testing if login of user a is successful
+Mon Apr 20 18:32:17 CEST 2020 - login of user a can be committed locally
+Mon Apr 20 18:32:17 CEST 2020 - login of user a committed locally
+Mon Apr 20 18:34:13 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:34:13 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:34:13 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:34:24 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:34:24 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:34:24 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:34:57 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:34:57 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:34:57 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:35:07 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:35:07 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:35:07 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:36:01 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:36:01 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:36:01 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:36:16 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:36:16 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:36:16 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:37:02 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:37:02 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:37:02 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:37:04 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:37:04 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:37:04 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:37:21 CEST 2020 - testing if message 0ea0f61c-811b-46d2-97e9-e0a0e780fe3c can be committed locally
+Mon Apr 20 18:37:21 CEST 2020 - message 0ea0f61c-811b-46d2-97e9-e0a0e780fe3c can be committed locally
+Mon Apr 20 18:37:21 CEST 2020 - message 0ea0f61c-811b-46d2-97e9-e0a0e780fe3c committed locally
+Mon Apr 20 18:37:41 CEST 2020 - testing if login of user a is successful
+Mon Apr 20 18:37:41 CEST 2020 - login of user a can be committed locally
+Mon Apr 20 18:37:41 CEST 2020 - login of user a committed locally
+Mon Apr 20 18:37:42 CEST 2020 - testing if chat asinan is successful
+Mon Apr 20 18:37:42 CEST 2020 - chat asinan can be committed locally
+Mon Apr 20 18:37:42 CEST 2020 - chat asinan committed locally
+Mon Apr 20 18:38:10 CEST 2020 - testing if login of user a is successful
+Mon Apr 20 18:38:10 CEST 2020 - login of user a can be committed locally
+Mon Apr 20 18:38:10 CEST 2020 - login of user a committed locally
+Mon Apr 20 18:38:11 CEST 2020 - testing if chat asinan is successful
+Mon Apr 20 18:38:11 CEST 2020 - chat asinan can be committed locally
+Mon Apr 20 18:38:11 CEST 2020 - chat asinan committed locally
+Mon Apr 20 18:38:19 CEST 2020 - testing if message 869e6e5f-75d9-425f-8b09-233d819bb3e2 can be committed locally
+Mon Apr 20 18:38:19 CEST 2020 - message 869e6e5f-75d9-425f-8b09-233d819bb3e2 can be committed locally
+Mon Apr 20 18:38:19 CEST 2020 - message 869e6e5f-75d9-425f-8b09-233d819bb3e2 committed locally
+Mon Apr 20 18:42:40 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:42:40 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:42:40 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:42:41 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:42:41 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:42:41 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:42:58 CEST 2020 - testing if login of user a is successful
+Mon Apr 20 18:42:58 CEST 2020 - login of user a can be committed locally
+Mon Apr 20 18:42:58 CEST 2020 - login of user a committed locally
+Mon Apr 20 18:43:00 CEST 2020 - testing if chat asinan is successful
+Mon Apr 20 18:43:00 CEST 2020 - chat asinan can be committed locally
+Mon Apr 20 18:43:00 CEST 2020 - chat asinan committed locally
+Mon Apr 20 18:43:05 CEST 2020 - testing if message 2fa1a083-b321-49be-bdc4-1fab466cf24c can be committed locally
+Mon Apr 20 18:43:05 CEST 2020 - message 2fa1a083-b321-49be-bdc4-1fab466cf24c can be committed locally
+Mon Apr 20 18:43:05 CEST 2020 - message 2fa1a083-b321-49be-bdc4-1fab466cf24c committed locally
+Mon Apr 20 18:43:08 CEST 2020 - testing if message 2651cf01-2710-43fb-b5ac-85dfe2122161 can be committed locally
+Mon Apr 20 18:43:08 CEST 2020 - message 2651cf01-2710-43fb-b5ac-85dfe2122161 can be committed locally
+Mon Apr 20 18:43:08 CEST 2020 - message 2651cf01-2710-43fb-b5ac-85dfe2122161 committed locally
+Mon Apr 20 18:43:15 CEST 2020 - testing if message 3755e60e-76bc-4785-b415-9d5f36758bc9 can be committed locally
+Mon Apr 20 18:43:15 CEST 2020 - message 3755e60e-76bc-4785-b415-9d5f36758bc9 can be committed locally
+Mon Apr 20 18:43:15 CEST 2020 - message 3755e60e-76bc-4785-b415-9d5f36758bc9 committed locally
+Mon Apr 20 18:43:27 CEST 2020 - testing if message 40df3c40-04e6-4528-afbc-0620bc0b3535 can be committed locally
+Mon Apr 20 18:43:27 CEST 2020 - message 40df3c40-04e6-4528-afbc-0620bc0b3535 can be committed locally
+Mon Apr 20 18:43:27 CEST 2020 - message 40df3c40-04e6-4528-afbc-0620bc0b3535 committed locally
+Mon Apr 20 18:43:57 CEST 2020 - testing if register of user jan is successful
+Mon Apr 20 18:43:57 CEST 2020 - register of user jan can be committed locally
+Mon Apr 20 18:43:57 CEST 2020 - register of user jan committed locally
+Mon Apr 20 18:43:59 CEST 2020 - testing if chat jansinan is successful
+Mon Apr 20 18:43:59 CEST 2020 - chat jansinan can be committed locally
+Mon Apr 20 18:43:59 CEST 2020 - chat jansinan committed locally
+Mon Apr 20 18:44:07 CEST 2020 - testing if message bf5f77fe-958e-49f0-8928-bf1f392bc934 can be committed locally
+Mon Apr 20 18:44:07 CEST 2020 - message bf5f77fe-958e-49f0-8928-bf1f392bc934 can be committed locally
+Mon Apr 20 18:44:07 CEST 2020 - message bf5f77fe-958e-49f0-8928-bf1f392bc934 committed locally
+Mon Apr 20 18:46:58 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:46:58 CEST 2020 - login of user sinan can not be committed locally
+Mon Apr 20 18:46:58 CEST 2020 - login of user sinan not committed
+Mon Apr 20 18:47:03 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:47:03 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:47:03 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:47:05 CEST 2020 - testing if chat sinanjan is successful
+Mon Apr 20 18:47:05 CEST 2020 - chat sinanjan can be committed locally
+Mon Apr 20 18:47:05 CEST 2020 - chat sinanjan committed locally
+Mon Apr 20 18:47:54 CEST 2020 - testing if login of user a is successful
+Mon Apr 20 18:47:54 CEST 2020 - login of user a can be committed locally
+Mon Apr 20 18:47:54 CEST 2020 - login of user a committed locally
+Mon Apr 20 18:47:58 CEST 2020 - testing if chat asinan is successful
+Mon Apr 20 18:47:58 CEST 2020 - chat asinan can be committed locally
+Mon Apr 20 18:47:58 CEST 2020 - chat asinan committed locally
+Mon Apr 20 18:48:03 CEST 2020 - testing if message 24bf696a-cbb7-4b3a-ae27-c8da100f7cd3 can be committed locally
+Mon Apr 20 18:48:03 CEST 2020 - message 24bf696a-cbb7-4b3a-ae27-c8da100f7cd3 can be committed locally
+Mon Apr 20 18:48:03 CEST 2020 - message 24bf696a-cbb7-4b3a-ae27-c8da100f7cd3 committed locally
+Mon Apr 20 18:48:06 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:48:06 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:48:06 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:48:49 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:48:49 CEST 2020 - login of user sinan can not be committed locally
+Mon Apr 20 18:48:49 CEST 2020 - login of user sinan not committed
+Mon Apr 20 18:48:55 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:48:55 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:48:55 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:49:02 CEST 2020 - testing if chat sinanjan is successful
+Mon Apr 20 18:49:02 CEST 2020 - chat sinanjan can be committed locally
+Mon Apr 20 18:49:02 CEST 2020 - chat sinanjan committed locally
+Mon Apr 20 18:49:11 CEST 2020 - testing if message f45c385d-443c-4fd3-9fe5-f90ba9b35607 can be committed locally
+Mon Apr 20 18:49:11 CEST 2020 - message f45c385d-443c-4fd3-9fe5-f90ba9b35607 can be committed locally
+Mon Apr 20 18:49:11 CEST 2020 - message f45c385d-443c-4fd3-9fe5-f90ba9b35607 committed locally
+Mon Apr 20 18:49:30 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:49:30 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:49:30 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:50:16 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:50:16 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:50:16 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:50:24 CEST 2020 - testing if chat sinanjan is successful
+Mon Apr 20 18:50:24 CEST 2020 - chat sinanjan can be committed locally
+Mon Apr 20 18:50:24 CEST 2020 - chat sinanjan committed locally
+Mon Apr 20 18:51:21 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:51:21 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:51:21 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:51:29 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:51:29 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:51:29 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:51:46 CEST 2020 - testing if message 917c2ab6-5f12-4ba2-bb90-ccdf6e2a8363 can be committed locally
+Mon Apr 20 18:51:46 CEST 2020 - message 917c2ab6-5f12-4ba2-bb90-ccdf6e2a8363 can be committed locally
+Mon Apr 20 18:51:46 CEST 2020 - message 917c2ab6-5f12-4ba2-bb90-ccdf6e2a8363 committed locally
+Mon Apr 20 18:58:47 CEST 2020 - testing if login of user sinan is successful
+Mon Apr 20 18:58:47 CEST 2020 - login of user sinan can be committed locally
+Mon Apr 20 18:58:47 CEST 2020 - login of user sinan committed locally
+Mon Apr 20 18:58:49 CEST 2020 - testing if chat sinana is successful
+Mon Apr 20 18:58:49 CEST 2020 - chat sinana can be committed locally
+Mon Apr 20 18:58:49 CEST 2020 - chat sinana committed locally
+Mon Apr 20 18:59:05 CEST 2020 - testing if login of user a is successful
+Mon Apr 20 18:59:05 CEST 2020 - login of user a can be committed locally
+Mon Apr 20 18:59:05 CEST 2020 - login of user a committed locally
+Mon Apr 20 18:59:07 CEST 2020 - testing if chat asinan is successful
+Mon Apr 20 18:59:07 CEST 2020 - chat asinan can be committed locally
+Mon Apr 20 18:59:07 CEST 2020 - chat asinan committed locally
+Mon Apr 20 18:59:11 CEST 2020 - testing if message 72d92c04-1c6d-4075-a7db-4df722f2b9cc can be committed locally
+Mon Apr 20 18:59:11 CEST 2020 - message 72d92c04-1c6d-4075-a7db-4df722f2b9cc can be committed locally
+Mon Apr 20 18:59:11 CEST 2020 - message 72d92c04-1c6d-4075-a7db-4df722f2b9cc committed locally
+Mon Apr 20 18:59:15 CEST 2020 - testing if message b1c47522-d2ef-4350-b0cc-c04e5bc7e56e can be committed locally
+Mon Apr 20 18:59:15 CEST 2020 - message b1c47522-d2ef-4350-b0cc-c04e5bc7e56e can be committed locally
+Mon Apr 20 18:59:15 CEST 2020 - message b1c47522-d2ef-4350-b0cc-c04e5bc7e56e committed locally
+Mon Apr 20 18:59:24 CEST 2020 - testing if message 1ea3b604-c10b-4c3c-a863-81b084324022 can be committed locally
+Mon Apr 20 18:59:24 CEST 2020 - message 1ea3b604-c10b-4c3c-a863-81b084324022 can be committed locally
+Mon Apr 20 18:59:24 CEST 2020 - message 1ea3b604-c10b-4c3c-a863-81b084324022 committed locally
+Mon Apr 20 18:59:36 CEST 2020 - testing if chat sinanjan is successful
+Mon Apr 20 18:59:36 CEST 2020 - chat sinanjan can be committed locally
+Mon Apr 20 18:59:36 CEST 2020 - chat sinanjan committed locally
+Mon Apr 20 19:00:44 CEST 2020 - testing if register of user ab is successful
+Mon Apr 20 19:00:44 CEST 2020 - register of user ab can be committed locally
+Mon Apr 20 19:00:45 CEST 2020 - register of user ab committed locally

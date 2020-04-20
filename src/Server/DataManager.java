@@ -5,6 +5,7 @@ import Model.Chat;
 import Model.Login;
 import Model.Message;
 import Model.Register;
+import crypto.AESServer;
 
 import java.io.*;
 import java.util.*;
@@ -127,7 +128,13 @@ public class DataManager {
                     String lamportCounter = messageData[3];
                     String sendSuccessfull = messageData[4];
                     String timeSend = messageData[5];
-                    String text = messageData[6];
+
+                    String text = null;
+                    try {
+                        text = AESServer.decrypt(messageData[6]);
+                    } catch (Exception e) {
+                        System.err.println(e);
+                    }
 
                     Message myMessage = new Message(messageID, sendFrom, sendTo, lamportCounter, sendSuccessfull, timeSend, text);
                     messages.add(myMessage);
@@ -171,7 +178,11 @@ public class DataManager {
                 String[] chatData = data.split(";");
                 String chatID = chatData[0];
                 if (chatID.equals(userA + userB) || chatID.equals(userB + userA)) {
-                    data += ";" + myMessage.toString();
+                    try {
+                        data += ";" + AESServer.encrypt(myMessage.toString());
+                    } catch (Exception e) {
+                        System.err.println(e);
+                    }
                 }
                 data += "\n";
                 lines.add(data);

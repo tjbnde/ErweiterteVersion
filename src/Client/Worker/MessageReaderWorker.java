@@ -2,6 +2,7 @@ package Client.Worker;
 
 import Client.Client;
 import Model.Message;
+import crypto.AES;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -62,7 +63,11 @@ public class MessageReaderWorker implements Runnable {
                         if (myMessage.getHeader().getSendFrom().equals(myClient.getChat().getUserB()) || myMessage.getHeader().getSendFrom().equals(myClient.getUsername())) {
                             System.out.println();
                             System.out.println(myMessage.getHeader().getSendFrom() + ": ");
-                            System.out.println(myMessage.getText());
+                            try {
+                                System.out.println(AES.decrypt(myMessage.getText()));
+                            } catch (Exception e) {
+                                System.err.println(e);
+                            }
                             System.out.println();
                         }
                     } else {

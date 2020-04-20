@@ -1,0 +1,4 @@
+a;a;19
+sinan;u;10
+jan;user2;2
+ab;b;0

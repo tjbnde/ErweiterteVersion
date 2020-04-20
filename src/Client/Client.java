@@ -2,6 +2,7 @@ package Client;
 
 import Client.Worker.MessageReaderWorker;
 import Model.*;
+import crypto.AES;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -272,6 +273,12 @@ public class Client {
 
             if (messageText.equals("logout")) {
                 logoutDialog();
+            }
+
+            try {
+                messageText = AES.encrypt(messageText);
+            } catch (Exception e) {
+                System.err.println(e);
             }
 
             globalLamportCounter++;
@@ -706,12 +713,11 @@ public class Client {
     private String returnRandomServerHostname() {
         double random = Math.random();
 
-        /*if (random < 0.5) {
+        if (random < 0.5) {
             return serverHostname[0];
         } else {
-       */
-        return serverHostname[1];
-        // }
+            return serverHostname[1];
+        }
     }
 
     public void setGlobalLamportCounter(int globalLamportCounter) {
