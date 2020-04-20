@@ -129,13 +129,8 @@ public class DataManager {
                     String sendSuccessfull = messageData[4];
                     String timeSend = messageData[5];
                     String text = messageData[6];
-                    String messageText = "";
-                    try {
-                        messageText = AES.decrypt(text);
-                    } catch (Exception e) {
-                        System.err.println(e);
-                    }
-                    Message myMessage = new Message(messageID, sendFrom, sendTo, lamportCounter, sendSuccessfull, timeSend, messageText);
+
+                    Message myMessage = new Message(messageID, sendFrom, sendTo, lamportCounter, sendSuccessfull, timeSend, text);
                     messages.add(myMessage);
                 }
             }

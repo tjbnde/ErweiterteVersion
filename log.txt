@@ -1,8 +1,0 @@
-Mon Apr 20 19:59:33 CEST 2020 - preparing commit of login for user sinan
-Mon Apr 20 19:59:33 CEST 2020 - login for user sinan can be commited
-Mon Apr 20 19:59:33 CEST 2020 - login for user sinan successful
-Mon Apr 20 19:59:34 CEST 2020 - preparing commit for user  sinan to join chat sinanjan
-Mon Apr 20 19:59:34 CEST 2020 - user sinan joining sinanjan can be commited
-Mon Apr 20 19:59:34 CEST 2020 - user sinanjoined chat sinanjan successful
-Mon Apr 20 19:59:36 CEST 2020 - preparing message 5dfcd31a-f05c-4f2c-a8e2-ba8d5f05ce1efor committing
-Mon Apr 20 19:59:36 CEST 2020 - set message 5dfcd31a-f05c-4f2c-a8e2-ba8d5f05ce1eready for committing
