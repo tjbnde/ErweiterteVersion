@@ -27,15 +27,6 @@ public class MessageHeader implements Serializable {
     // lamport counter for logical order of messages
     private int localLamportCounter;
 
-    /**
-     * Konstrukter um eine Nachricht aus dem Speicher zu laden
-     * @param messageId Eindeutige ID einer Nachricht
-     * @param sendFrom Username des Absenders
-     * @param sendTo Username des Empfängers
-     * @param globalLamportCounter LamportCounter der Nachricht um sie in einer korrekten Reihenfolge anzuzeigen
-     * @param sendSuccessful Wahrheitswert ob die Nachricht erfolgreich versendet wurde
-     * @param timeSend Zeitstempel der Nachricht
-     */
     public MessageHeader(String messageId, String sendFrom, String sendTo, int globalLamportCounter, boolean sendSuccessful, Date timeSend) {
         this.messageId = UUID.fromString(messageId);
         this.timeSend = timeSend;
@@ -45,13 +36,6 @@ public class MessageHeader implements Serializable {
     }
 
     // header to create new messages
-
-    /**
-     * Konstrukter um eine neue Nachricht zu erstellen
-     * @param sendFrom Username des Absenders
-     * @param sendTo Username des Empfängers
-     * @param globalLamportCounter Aktueller Wert des Lamport Counters
-     */
     public MessageHeader(String sendFrom, String sendTo, int globalLamportCounter ) {
         messageId = UUID.randomUUID();
         long currentTimeMillis = System.currentTimeMillis();

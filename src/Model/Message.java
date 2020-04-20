@@ -24,9 +24,7 @@ public class Message implements Serializable, Comparable {
         status = "";
     }
 
-    /**
-     * Methode um das Objekt in einen String zu verwandeln um die Daten anschließend in eine Datei zu schreiben
-     */
+
     @Override
     public String toString(){
         String messageToString = "";

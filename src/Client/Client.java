@@ -713,11 +713,11 @@ public class Client {
     private String returnRandomServerHostname() {
         double random = Math.random();
 
-        //if (random < 0.5) {
+        if (random < 0.5) {
             return serverHostname[0];
-        //} else {
-        //    return serverHostname[1];
-        //}
+        } else {
+            return serverHostname[1];
+        }
     }
 
     public void setGlobalLamportCounter(int globalLamportCounter) {

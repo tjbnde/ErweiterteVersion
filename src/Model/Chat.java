@@ -3,10 +3,6 @@ package Model;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Model Klasse Chat
- * Implementiert Serializable um Instanzen dieser Klasse per ObjectInputStream und ObjectOutputStream zu versenden
- */
 public class Chat implements Serializable {
     // unique chat id
     private String chatId;
